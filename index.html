@@ -1,0 +1,67 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Justice-Centered Edge AI</title>
+<style>
+  :root {
+    --paper: #FAF7F1; --ink: #2B2622; --muted: #8A8177; --line: #D9D2C6;
+    --brick: #A8703D; --cam: #1E5C3A; --card: #FFFEFA;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #211D19; --ink: #EDE7DE; --muted: #9C948A; --line: #3D3831;
+      --brick: #C98F55; --cam: #5FA97F; --card: #282420;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper); color: var(--ink); margin: 0; padding: 0 20px 80px;
+    font-family: Seravek, "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 17px; line-height: 1.6;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; }
+  h1, h2, .eyebrow { font-family: "Futura", "Avenir Next", "Century Gothic", sans-serif; }
+  h1 { font-size: 2.3rem; margin: 0 0 10px; text-wrap: balance; }
+  .eyebrow { text-transform: uppercase; letter-spacing: .14em; font-size: .74rem; color: var(--brick); font-weight: 600; }
+  header { padding: 64px 0 10px; }
+  header p { color: var(--muted); max-width: 60ch; }
+  .cards { display: grid; gap: 16px; margin-top: 34px; }
+  a.card {
+    display: block; background: var(--card); border: 1px solid var(--line);
+    border-left: 4px solid var(--cam); border-radius: 6px; padding: 20px 24px;
+    text-decoration: none; color: var(--ink);
+  }
+  a.card:hover { border-left-color: var(--brick); }
+  a.card h2 { margin: 0 0 6px; font-size: 1.2rem; color: var(--cam); }
+  a.card p { margin: 0; font-size: .93rem; color: var(--muted); max-width: 65ch; }
+  .foot { margin-top: 44px; font-size: .85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+  .foot a { color: var(--cam); }
+  :focus-visible { outline: 2px solid var(--cam); outline-offset: 2px; }
+</style>
+</head><body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">Cal Poly &middot; JDEI Research Project &middot; Fall 2026</div>
+  <h1>Justice-Centered Edge AI</h1>
+  <p>Designing affordable and privacy-preserving technologies to advance food equity:
+  an on-device shelf-monitoring prototype for the Cal Poly Food Pantry.
+  PI: Prof. Souvik Kundu &middot; Student researcher: Amogh Somisetty.</p>
+</header>
+<div class="cards">
+  <a class="card" href="report.html">
+    <h2>Phase Zero Report</h2>
+    <p>Pre-semester progress: the system concept, a trained baseline model (0.90 mAP50),
+    two completed experiments with before/after visuals, the groundwork (literature, IRB,
+    privacy architecture), and the five decisions queued for the first meeting.</p>
+  </a>
+  <a class="card" href="survey.html">
+    <h2>Building 27 Pantry Survey</h2>
+    <p>The deployment site, measured before visiting: dimensioned floor plan and shelf
+    elevation from video photogrammetry, camera coverage geometry, annotated site frames,
+    and the trainable-feature inventory.</p>
+  </a>
+</div>
+<div class="foot">
+  Code and experiment scripts: <a href="https://github.com/Asomisetty27/pantry-vision">github.com/Asomisetty27/pantry-vision</a> (private, access on request)
+  &middot; Part of <a href="https://amogh.site">amogh.site</a>
+</div>
+</div>
+</body></html>
