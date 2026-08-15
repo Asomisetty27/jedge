@@ -385,6 +385,98 @@
   </div>
 </section>
 
+<!-- SHEET 7 · MONITOR DEMO -->
+<section class="sheet">
+  <div class="sheet-head"><span class="sheet-no">SHEET 7</span><h2>Monitoring loop, demonstrated in simulation</h2></div>
+  <p style="max-width:74ch; color:var(--muted); font-size:.9rem; margin:10px 0 0;">
+    The on-device pipeline (repo: <span style="font-family:ui-monospace,Menlo,monospace">monitor/</span> +
+    <span style="font-family:ui-monospace,Menlo,monospace">scripts/06_monitor.py</span>) was implemented and
+    exercised on 2026-08-15 using video frames as a stand-in camera. Frames are analyzed in memory and
+    discarded; the only outputs ever written are occupancy numbers, shelf state, and the digest.</p>
+  <figure>
+  <div class="fig-scroll">
+  <svg viewBox="0 0 1060 300" role="img" aria-label="Runtime loop: each frame passes an out-of-distribution guard; failing frames produce a no-reading record and mark state stale; passing frames go through gap detection, per-ROI occupancy, a persistence filter, and into the staff digest. Frames are discarded after inference in both branches.">
+    <defs>
+      <marker id="arr7" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M1,1 L9,5 L1,9" fill="currentColor" stroke="none"/>
+      </marker>
+    </defs>
+    <g fill="none" stroke="currentColor" stroke-width="1.6" font-size="13" font-family="Seravek,system-ui,sans-serif">
+      <rect x="20" y="90" width="120" height="52" rx="4"/>
+      <text x="80" y="112" text-anchor="middle" fill="currentColor" stroke="none">camera frame</text>
+      <text x="80" y="130" text-anchor="middle" fill="currentColor" stroke="none" opacity="0.7">every N sec</text>
+      <rect x="190" y="90" width="140" height="52" rx="4" stroke="var(--cam)"/>
+      <text x="260" y="112" text-anchor="middle" fill="var(--cam)" stroke="none">OOD guard</text>
+      <text x="260" y="130" text-anchor="middle" fill="currentColor" stroke="none" opacity="0.7">lights, scene match</text>
+      <rect x="390" y="30" width="140" height="52" rx="4"/>
+      <text x="460" y="52" text-anchor="middle" fill="currentColor" stroke="none">gap detection</text>
+      <text x="460" y="70" text-anchor="middle" fill="currentColor" stroke="none" opacity="0.7">YOLO11n, on device</text>
+      <rect x="580" y="30" width="150" height="52" rx="4"/>
+      <text x="655" y="52" text-anchor="middle" fill="currentColor" stroke="none">occupancy / ROI</text>
+      <text x="655" y="70" text-anchor="middle" fill="currentColor" stroke="none" opacity="0.7">1 - gap area / ROI area</text>
+      <rect x="780" y="30" width="150" height="52" rx="4"/>
+      <text x="855" y="52" text-anchor="middle" fill="currentColor" stroke="none">persistence filter</text>
+      <text x="855" y="70" text-anchor="middle" fill="currentColor" stroke="none" opacity="0.7">state holds N hours</text>
+      <rect x="390" y="180" width="180" height="52" rx="4" stroke="var(--flag)"/>
+      <text x="480" y="202" text-anchor="middle" fill="var(--flag)" stroke="none">"no reading" logged</text>
+      <text x="480" y="220" text-anchor="middle" fill="currentColor" stroke="none" opacity="0.7">state marked stale</text>
+      <rect x="780" y="180" width="150" height="52" rx="4" stroke="var(--cam)"/>
+      <text x="855" y="202" text-anchor="middle" fill="var(--cam)" stroke="none">staff digest</text>
+      <text x="855" y="220" text-anchor="middle" fill="currentColor" stroke="none" opacity="0.7">needs-attention first</text>
+      <line x1="140" y1="116" x2="188" y2="116" marker-end="url(#arr7)"/>
+      <line x1="330" y1="102" x2="388" y2="60" marker-end="url(#arr7)"/>
+      <text x="352" y="66" fill="var(--cam)" stroke="none">pass</text>
+      <line x1="330" y1="130" x2="388" y2="200" marker-end="url(#arr7)"/>
+      <text x="345" y="180" fill="var(--flag)" stroke="none">fail</text>
+      <line x1="530" y1="56" x2="578" y2="56" marker-end="url(#arr7)"/>
+      <line x1="730" y1="56" x2="778" y2="56" marker-end="url(#arr7)"/>
+      <line x1="855" y1="82" x2="855" y2="178" marker-end="url(#arr7)"/>
+      <line x1="570" y1="206" x2="778" y2="206" marker-end="url(#arr7)"/>
+      <text x="460" y="120" fill="currentColor" stroke="none" opacity="0.75" font-family="ui-monospace,Menlo,monospace" font-size="12">frame discarded after inference; no image is ever stored</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption>Runtime loop. The out-of-distribution guard runs before the detector: frames failing the
+  brightness or scene-match checks produce a "no reading" record instead of an occupancy number, and
+  the affected shelves are reported as unreadable rather than guessed.</figcaption>
+  </figure>
+  <div style="display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); margin-top:16px;">
+    <div style="background:var(--card); border:1px solid var(--line); border-radius:4px; padding:14px 16px;">
+      <div class="eyebrow" style="margin-bottom:8px;">Test 1: moving camera (30 walkthrough frames)</div>
+      <pre style="font-family:ui-monospace,Menlo,monospace; font-size:.78rem; line-height:1.5; margin:0; overflow-x:auto; color:var(--ink);">1 valid reading, 29 refused
+reason: scene mismatch, camera
+moved or blocked
+
+CAMERA COULD NOT READ
+(check lens/lighting):
+  cubby top c1: no recent reading
+  cubby top c2: no recent reading
+  ...</pre>
+      <p style="font-size:.82rem; color:var(--muted); margin:10px 0 0;">Calibrated on one viewpoint, then fed
+      29 frames from other viewpoints. The guard refused all 29 rather than emit occupancy numbers for a
+      scene it was not calibrated on. This is the intended behavior for a bumped or blocked camera.</p>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--line); border-radius:4px; padding:14px 16px;">
+      <div class="eyebrow" style="margin-bottom:8px;">Test 2: fixed viewpoint (identical-view pair)</div>
+      <pre style="font-family:ui-monospace,Menlo,monospace; font-size:.78rem; line-height:1.5; margin:0; overflow-x:auto; color:var(--ink);">Pantry shelf digest - Sat Aug 15
+
+All 13 shelves OK.
+Nothing needs attention.
+
+occupancy: 13/13 ROIs = 1.00
+(wall fully stocked: correct)</pre>
+      <p style="font-size:.82rem; color:var(--muted); margin:10px 0 0;">Both frames pass the guard; all 13
+      regions read fully stocked, matching the ground truth for that wall. The digest renders the
+      steady-state output a healthy pantry should produce.</p>
+    </div>
+  </div>
+  <div class="note" style="margin-top:16px;">
+    Deployment status: every software stage between camera and digest now exists and has been exercised.
+    Jetson bring-up reduces to: flash JetPack, build the TensorRT engine, calibrate the guard once on the
+    mounted camera, run the loop.
+  </div>
+</section>
+
 <!-- DIMENSIONS TABLE -->
 <section class="sheet">
   <div class="sheet-head"><span class="sheet-no">TABLE 1</span><h2>Dimension register</h2></div>
