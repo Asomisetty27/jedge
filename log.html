@@ -360,6 +360,30 @@
 
 </div><!-- /timeline -->
 
+<div class="entry">
+  <div class="entry-date">2026-08-16</div>
+  <h3>The data question, asked harder and closed <span class="pill done">done</span></h3>
+  <p>A challenge worth recording: was the search for training data actually thorough? A second sweep
+  answered it properly. Thirteen previously unprobed dataset leads were checked by API; four were
+  downloaded and rendered for inspection, and three were rejected on sight (one "empty space" dataset
+  turned out to be photographs of bolts on a parts tray). Every non-Roboflow platform - Kaggle,
+  HuggingFace, Zenodo, Dataverse, Figshare, IEEE DataPort, GitHub, synthetic-data pipelines - was
+  swept and documented empty for this task. Two ideal academic datasets exist but are locked behind
+  author permission. The search is now exhausted in the strong sense: every thread named, every dead
+  end recorded.</p>
+  <p>The sweep also surfaced one real hypothesis: maybe EXP-005 failed because the added data was
+  bulk and sloppy, and carefully verified additions would still help. EXP-007 tested exactly that,
+  with the rule fixed in advance: the winning pool plus only inspection-passed additions, including
+  researcher-grade labels derived from hand-traced masks. Result: <b>0.892, below both the original
+  pool (0.920) and the cleaned bulk pool (0.902)</b>. Three experiments now form one line: every
+  public-data addition, careful or not, made the model worse on the fixed benchmark.</p>
+  <p>One honest caveat, stated in the record: the benchmark's validation images come from the same
+  sources as the original pool, which structurally favors it. What these experiments prove is that
+  public data is spent as a lever. What actually improves the deployed system will be decided by
+  imagery from the pantry itself, which is precisely what the first weeks of the semester collect.
+  The current model (v3) enters the semester as the final Phase 0 model.</p>
+</div>
+
 <div class="nav">
   <a href="index.html">&larr; Back to project home</a> &middot;
   <a href="report.html">Phase Zero Report</a> &middot;
