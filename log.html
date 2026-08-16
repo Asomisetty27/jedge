@@ -337,10 +337,25 @@
 </div>
 
 <div class="entry">
-  <div class="entry-date">2026-08-15</div>
-  <h3>EXP-005 (second run): retraining on the cleaned pool <span class="pill running">running</span></h3>
-  <p>Fine-tuning from the SKU-110K pretrained weights on the cleaned, deduplicated 11,624-image pool.
-  This entry will be updated with the result.</p>
+  <div class="entry-date">2026-08-16</div>
+  <h3>EXP-005 concluded: quality beats quantity <span class="pill done">done</span></h3>
+  <p>The retrain on the cleaned 11,624-image pool finished at <b>0.902 mAP50</b>: cleaning recovered 24
+  of the 26 points the poisoned run lost, but the expanded pool still came in below the smaller curated
+  pool's 0.920. The full battery agreed. Occupancy error: 12.3 points versus 11.8. And on the most
+  important real-world check, the candidate model <b>missed the bare case shelves</b> that the current
+  model detects. The current model (v3) stays.</p>
+  <table>
+    <tr><th>Test</th><th>v3 (5.5k curated images)</th><th>candidate (11.6k cleaned images)</th></tr>
+    <tr><td>validation mAP50</td><td class="num"><b>0.920</b></td><td class="num">0.902</td></tr>
+    <tr><td>occupancy error</td><td class="num"><b>11.8 points</b></td><td class="num">12.3 points</td></tr>
+    <tr><td>bare-shelf detection (pantry)</td><td><b>found, 0.43</b></td><td>missed</td></tr>
+  </table>
+  <p><b>The finding:</b> doubling the training data produced a strictly worse model, even with the label
+  poisoning removed. The added sources' differing annotation styles and heavy augmentation diluted the
+  target distribution rather than reinforcing it. This closes the public-data avenue with a measured
+  answer: the remaining way to improve the model is real imagery from the pantry itself, which is
+  exactly what the first weeks of the semester will collect. A negative result, but a decision-shaping
+  one: effort now goes where the data is scarce and valuable instead of where it is plentiful and cheap.</p>
 </div>
 
 </div><!-- /timeline -->
