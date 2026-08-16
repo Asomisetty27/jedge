@@ -358,8 +358,6 @@
   one: effort now goes where the data is scarce and valuable instead of where it is plentiful and cheap.</p>
 </div>
 
-</div><!-- /timeline -->
-
 <div class="entry">
   <div class="entry-date">2026-08-16</div>
   <h3>The data question, asked harder and closed <span class="pill done">done</span></h3>
@@ -403,6 +401,33 @@
   in the first weeks of the semester. The deployment model remains v3; the week-2 hardware bring-up
   is now scripted end to end (flash, build engine, calibrate, run as an auto-restarting service).</p>
 </div>
+
+<div class="entry">
+  <div class="entry-date">2026-08-16</div>
+  <h3>A third data sweep, and a citation retracted <span class="pill done">done</span></h3>
+  <p>An observation about the deployment site opened one last search angle: the pantry buys its core
+  stock in bulk, a few consistent brands restocked repeatedly. A small fixed catalog makes per-item
+  recognition tractable in a way open-ended retail recognition is not. So a third sweep asked a new
+  question of the public data: not "are there empty-shelf boxes" but "are there brand-item datasets
+  worth training on." Thirty-five queries against the dataset platform's search API returned 493
+  distinct projects, each screened by class list and sample imagery.</p>
+  <p>The answer is again no, and again useful. Every brand-item pantry dataset found is tabletop
+  close-up photography, a hand holding a soup can at arm's length, which does not transfer to a
+  fixed camera viewing a shelf wall. One 893-image candidate whose class names suggested fill-level
+  annotation was downloaded in full and turned out to be supermarket egg-carton displays, unrelated
+  to its own title. But two small student projects demonstrated the recipe that matters: working
+  closed-set detection of five to seven fixed products from a few hundred self-collected images.
+  That is precisely the shape of the on-site option this fall, applied to the pantry's own bulk
+  catalog, and it is now recorded as the validated path should item-level detail prove wanted.</p>
+  <p>The sweep also forced a correction. An earlier literature pass had recorded a pantry-domain
+  labeling dataset attributed to a university lab. Verification across the dataset platform's search,
+  its API, and the open web found no trace of it, so the citation was retracted from the project
+  record; the datasets that anchor the novelty claim were re-verified live the same day and stand.
+  A record that catches its own unverifiable citation is doing its job: every claim in this log is
+  meant to survive exactly this kind of audit.</p>
+</div>
+
+</div><!-- /timeline -->
 
 <div class="nav">
   <a href="index.html">&larr; Back to project home</a> &middot;
