@@ -128,13 +128,13 @@ exists publicly. Small pantry item-classification datasets do exist, so the defe
 to shelf-occupancy deployment and occupancy-labeled data, with citations compiled in the project notes.</p>
 
 <h2>4 &middot; The two experiments</h2>
-<h3>EXP-001: baseline transfer test</h3>
+<h3 id="exp001">EXP-001: baseline transfer test</h3>
 <p>We ran the 0.90-mAP50 baseline on real pantry imagery it had never seen. Its single most confident
 detection anywhere (0.70) was <b>wall decoration</b>: the painted fruit cutouts above the shelves. It
 also fired on empty counter space and a shopper's dark hair, and missed genuinely bare shelves. The
 failure has one shape: the model learned "dark flat region = gap" without learning "must be inside a
 shelf." Notably, every false positive fell <em>outside</em> the per-cubby ROI grid, so per-cubby ROI cropping alone removes the observed false positives.</p>
-<h3>EXP-002: site-specific fine-tuning</h3>
+<h3 id="exp002">EXP-002: site-specific fine-tuning</h3>
 <p>We hand-labeled 15 frames from the pantry video (7 gap boxes, 8 negatives including the decor wall
 and frames with people) and fine-tuned for 2 minutes on a laptop, backbone frozen. Same test,
 held-out images:</p>

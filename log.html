@@ -1,0 +1,309 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research Log</title>
+</head><body>
+
+<style>
+  :root {
+    --paper: #FAF7F1; --ink: #2B2622; --muted: #8A8177; --line: #D9D2C6;
+    --brick: #A8703D; --brick-soft: #F0E4D3; --cam: #1E5C3A; --cam-soft: #DCE9E0;
+    --flag: #B98A2E; --flag-soft: #F3E7CC; --card: #FFFEFA;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #211D19; --ink: #EDE7DE; --muted: #9C948A; --line: #3D3831;
+      --brick: #C98F55; --brick-soft: #3A2F23; --cam: #5FA97F; --cam-soft: #24352B;
+      --flag: #D4A94E; --flag-soft: #3A311F; --card: #282420;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #211D19; --ink: #EDE7DE; --muted: #9C948A; --line: #3D3831;
+    --brick: #C98F55; --brick-soft: #3A2F23; --cam: #5FA97F; --cam-soft: #24352B;
+    --flag: #D4A94E; --flag-soft: #3A311F; --card: #282420;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: Seravek, "Segoe UI", -apple-system, system-ui, sans-serif;
+    font-size: 16.5px; line-height: 1.6; margin: 0; padding: 0 20px 100px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  h1, h2, h3, .eyebrow { font-family: "Futura", "Avenir Next", "Century Gothic", sans-serif; }
+  h1 { font-size: 2.15rem; margin: 0 0 6px; text-wrap: balance; }
+  h2 { font-size: 1.25rem; margin: 0 0 4px; }
+  h3 { font-size: 1.0rem; margin: 18px 0 4px; }
+  p { max-width: 70ch; margin: 8px 0; }
+  .eyebrow { text-transform: uppercase; letter-spacing: .14em; font-size: .72rem; color: var(--brick); font-weight: 600; }
+  header { padding: 50px 0 16px; border-bottom: 3px solid var(--ink); margin-bottom: 8px; }
+  header .sub { color: var(--muted); max-width: 62ch; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 8px 26px; padding: 12px 0 34px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .78rem; color: var(--muted);
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  .pill {
+    display: inline-block; font-family: ui-monospace, Menlo, monospace; font-size: .68rem;
+    padding: 2px 9px; border-radius: 20px; font-weight: 600; letter-spacing: .02em; vertical-align: middle;
+  }
+  .pill.done { background: var(--cam-soft); color: var(--cam); }
+  .pill.running { background: var(--flag-soft); color: var(--flag); }
+  .pill.setback { background: transparent; color: var(--flag); border: 1px solid var(--flag); }
+  /* timeline */
+  .timeline { position: relative; margin-top: 30px; padding-left: 26px; border-left: 2px solid var(--line); }
+  .entry { position: relative; margin-bottom: 44px; }
+  .entry::before {
+    content: ""; position: absolute; left: -32px; top: 4px; width: 12px; height: 12px;
+    border-radius: 50%; background: var(--cam); border: 2px solid var(--paper);
+  }
+  .entry.setback::before { background: var(--flag); }
+  .entry-date { font-family: ui-monospace, Menlo, monospace; font-size: .74rem; color: var(--muted); margin-bottom: 3px; }
+  .entry h3 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  figure { margin: 14px 0; }
+  .fig-scroll { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 12px; }
+  figure svg { display: block; max-width: 100%; height: auto; margin: 0 auto; min-width: 480px; }
+  figcaption { font-size: .84rem; color: var(--muted); margin-top: 8px; max-width: 72ch; }
+  figcaption b { color: var(--ink); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .88rem; }
+  th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); }
+  th { font-family: "Futura","Avenir Next",sans-serif; font-size: .68rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 600; }
+  .num { font-family: ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+  a { color: var(--cam); }
+  ul.tight { margin: 8px 0; padding-left: 20px; }
+  ul.tight li { margin-bottom: 4px; }
+  .quote {
+    background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--brick);
+    padding: 10px 16px; margin: 12px 0; font-size: .9rem; font-style: italic; max-width: 68ch;
+  }
+  .nav { margin-top: 60px; padding-top: 16px; border-top: 1px solid var(--line); font-size: .88rem; }
+  :focus-visible { outline: 2px solid var(--cam); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Justice Centered Edge AI &middot; living document</div>
+  <h1>Research Log</h1>
+  <p class="sub">Everything that happened, in order, including what broke. Written so someone with no
+  prior context can read start to finish and understand the whole process: what was decided, what was
+  tried, what failed, and why the current state is what it is.</p>
+</header>
+<div class="meta">
+  <span>started <b>2026-08-14</b></span>
+  <span>last entry <b>2026-08-15</b></span>
+  <span>status <b>active, updated as work continues</b></span>
+</div>
+
+<div class="timeline">
+
+<div class="entry">
+  <div class="entry-date">2026-08-14</div>
+  <h3>Project scoped <span class="pill done">done</span></h3>
+  <p>The JDEI proposal was read and its scope locked: a fixed camera watches Cal Poly Food Pantry shelves,
+  an on-device model estimates occupancy and flags low stock, all inference stays on the device. Public
+  shelf-detection datasets were surveyed and a two-stage data strategy was chosen (pretrain on dense retail
+  imagery, fine-tune on empty-shelf sets), and the detector architecture was chosen (YOLO11n: small enough
+  for the Jetson, accurate enough for the task). Three camera options were priced for the PI.</p>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-08-14 to 15</div>
+  <h3>The deployment site, measured from video <span class="pill done">done</span></h3>
+  <p>No site visit had happened yet, so a promotional video the pantry had already published was analyzed
+  frame by frame: 250 frames, cross-referenced against known object sizes (brick coursing, can dimensions,
+  a commercial reach-in fridge of known make) to reconstruct a dimensioned floor plan and shelf elevation.
+  This is the <a href="survey.html">Building 27 Pantry Survey</a>: room geometry, camera coverage math,
+  power locations, and an inventory of what the camera would actually need to recognize.</p>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-08-15</div>
+  <h3>Baseline model trained on Colab <span class="pill done">done</span></h3>
+  <p>Six public empty-shelf datasets were pooled (4,860 training images, one class: <em>gap</em>) and
+  YOLO11n was fine-tuned on a free Colab GPU. The first run was interrupted twice by Colab reclaiming the
+  VM mid-training. The fix: point training output at a mounted Google Drive folder so every epoch's
+  checkpoint survives a disconnect, and make the script auto-resume from the last checkpoint instead of
+  restarting. After that fix, disconnects cost at most one epoch instead of the whole run.</p>
+  <p><b>Result: mAP50 0.898, mAP50-95 0.639</b> on the retail validation split.</p>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-08-15</div>
+  <h3>EXP-001: the retail model meets the real pantry <span class="pill done">done</span></h3>
+  <p>The trained model was run on real pantry photos it had never seen. Its single most confident
+  detection anywhere (0.70) was the painted fruit decoration on the wall above the shelves. It also
+  flagged empty counter space and, in one frame, a shopper's hair, while missing shelves that were
+  genuinely empty. The pattern: the model had learned "dark flat region," not "empty region inside a
+  shelf." Full write-up and images: <a href="report.html#exp001">Phase Zero Report, EXP-001</a>.</p>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-08-15</div>
+  <h3>EXP-002: 15 labeled frames from the site <span class="pill done">done</span></h3>
+  <p>Fifteen frames from the pantry's own video were hand-labeled (7 gap boxes, 8 negatives including the
+  decor wall) and used to fine-tune the model for two minutes on a laptop CPU. Every false positive
+  observed in EXP-001 disappeared, and the model began detecting gap types it had missed before, including
+  a freezer shelf it had never seen labeled. This became the deployment model, v2. Before and after images:
+  <a href="report.html#exp002">Phase Zero Report, EXP-002</a>.</p>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-08-15</div>
+  <h3>On-device monitoring loop built and tested <span class="pill done">done</span></h3>
+  <p>The full runtime pipeline was written: a guard that refuses to report a number when the camera view
+  looks wrong (lights off, camera bumped or blocked) rather than guessing, per-shelf occupancy from the
+  gap detections, a filter that requires a shelf to read low for a sustained period before it is reported
+  (a single odd frame should not trigger an alert), and a plain-text summary for staff. It was tested
+  against video frames standing in for a camera: fed frames from different viewpoints, it correctly
+  refused 29 of 30 as "camera moved"; fed two frames of the same fully-stocked view, it read all shelves
+  correctly and produced a clean summary. Diagram and test output: <a href="survey.html#sheet7">Building 27
+  Survey, Sheet 7</a>.</p>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-08-15</div>
+  <h3>Progress shared with the PI <span class="pill done">done</span></h3>
+  <p>This site was built and a progress email sent summarizing the baseline model, both experiments, and
+  the site survey, along with the camera purchase options.</p>
+  <div class="quote">"Great progress! I have not done a deep dive into the write up from your site. But
+  did look at the overall organization, your thought process and plan for collecting the training data.
+  It looks good to me." (reply received the same day)</div>
+  <p>The PI agreed to order the camera and asked what else to include in that order; a small hardware list
+  was sent back (NVMe SSD, microSD card, an active USB extension cable sized from the room measurements,
+  and a wall mount). The PI is separately locating the pantry's admin contact for installation permissions.
+  A plain-language one-page description of the system (what the camera sees, what is stored, who is in
+  charge) was drafted for that conversation.</p>
+</div>
+
+<div class="entry setback">
+  <div class="entry-date">2026-08-15</div>
+  <h3>Setback: Colab's free GPU quota ran out <span class="pill setback">setback</span></h3>
+  <p>The next planned experiment (does pretraining on a dense retail dataset before the gap fine-tune
+  improve results) needs a multi-hour GPU run. Free Colab refused to connect to a GPU: the account had
+  used its daily allotment. Rather than wait, a second free GPU source was set up: Kaggle, which grants
+  30 GPU-hours per week to phone-verified accounts. This turned out to be the right call independent of
+  the immediate blocker, since it gives the project a second GPU backend for the rest of the semester.</p>
+</div>
+
+<div class="entry setback">
+  <div class="entry-date">2026-08-15</div>
+  <h3>Setback, in three parts: learning Kaggle's platform <span class="pill setback">setback</span></h3>
+  <p>Moving the training job to Kaggle meant running it as a background "kernel" rather than an
+  interactive notebook. The first three attempts each failed for a different, informative reason:</p>
+  <figure>
+  <div class="fig-scroll">
+  <svg viewBox="0 0 1000 460" role="img" aria-label="Four attempts to run the training kernel on Kaggle. Attempt 1 failed because the ultralytics package was not installed. Attempt 2 failed because the dataset downloaded into a small output-only disk instead of the large scratch disk. Attempt 3 failed because the newer PyTorch version no longer supported the P100 GPU's older architecture. Attempt 4, with all three fixed, ran successfully to completion.">
+    <defs>
+      <marker id="larr2" viewBox="0 0 10 10" refX="5" refY="8" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M1,1 L5,9 L9,1" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      </marker>
+    </defs>
+    <g font-family="Seravek,system-ui,sans-serif" font-size="13.5">
+      <rect x="20" y="10" width="960" height="82" rx="5" fill="none" stroke="var(--flag)" stroke-width="1.6"/>
+      <text x="36" y="32" fill="var(--flag)" font-weight="600">ATTEMPT 1</text>
+      <text x="36" y="54" fill="currentColor">Kernel crashed immediately: the training library (<tspan font-family="ui-monospace,Menlo,monospace">ultralytics</tspan>) was never installed on the machine.</text>
+      <text x="36" y="74" fill="var(--cam)">Fix: install it as the first step of the script.</text>
+
+      <rect x="20" y="120" width="960" height="82" rx="5" fill="none" stroke="var(--flag)" stroke-width="1.6"/>
+      <text x="36" y="142" fill="var(--flag)" font-weight="600">ATTEMPT 2</text>
+      <text x="36" y="164" fill="currentColor">Kernel died mid-download: the 13 GB training dataset was being saved to the kernel's small "results" disk (20 GB limit) instead of its large scratch disk, and it filled up.</text>
+      <text x="36" y="184" fill="var(--cam)">Fix: point every download at the scratch disk explicitly, with an absolute path.</text>
+
+      <rect x="20" y="230" width="960" height="82" rx="5" fill="none" stroke="var(--flag)" stroke-width="1.6"/>
+      <text x="36" y="252" fill="var(--flag)" font-weight="600">ATTEMPT 3</text>
+      <text x="36" y="274" fill="currentColor">Kernel crashed the moment training touched the GPU: Kaggle's default PyTorch version had dropped support for the P100 GPU's older chip architecture.</text>
+      <text x="36" y="294" fill="var(--cam)">Fix: install a specific older PyTorch build that still supports that chip.</text>
+
+      <rect x="20" y="340" width="960" height="82" rx="5" fill="none" stroke="var(--cam)" stroke-width="2"/>
+      <text x="36" y="362" fill="var(--cam)" font-weight="700">ATTEMPT 4</text>
+      <text x="36" y="384" fill="currentColor">All three fixes applied. Kernel ran end to end: dataset pretrain, then gap fine-tune, then evaluation.</text>
+      <text x="36" y="404" fill="var(--cam)" font-weight="600">Completed in about 2.5 hours, unattended, no browser tab required.</text>
+
+      <g stroke="currentColor" fill="currentColor">
+        <line x1="500" y1="92" x2="500" y2="118" marker-end="url(#larr2)"/>
+        <line x1="500" y1="202" x2="500" y2="228" marker-end="url(#larr2)"/>
+        <line x1="500" y1="312" x2="500" y2="338" marker-end="url(#larr2)"/>
+      </g>
+    </g>
+  </svg>
+  </div>
+  <figcaption>Three fast, cheap failures, each fixed and folded into the training script, produced a
+  hardened recipe now reused for every subsequent Kaggle run.</figcaption>
+  </figure>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-08-15</div>
+  <h3>EXP-004: does dense-retail pretraining help <span class="pill done">done</span></h3>
+  <p>With the Kaggle recipe working, the originally planned comparison ran: pretrain on SKU-110K (a
+  dense retail-shelf dataset, 11,743 images) before the gap fine-tune, versus fine-tuning directly.
+  This was pre-registered before the run: the decision rule for adopting the pretrained model was fixed
+  in writing in advance, so the result could not be interpreted to fit a preference.</p>
+  <table>
+    <tr><th>Metric</th><th>Direct fine-tune</th><th>With SKU-110K pretrain</th></tr>
+    <tr><td>gap validation mAP50</td><td class="num">0.898</td><td class="num"><b>0.920</b></td></tr>
+    <tr><td>gap validation mAP50-95</td><td class="num">0.639</td><td class="num"><b>0.681</b></td></tr>
+  </table>
+  <p>Pretraining won on the benchmark, and also produced fewer false positives on real pantry photos with
+  zero pantry-specific data, meaning the improvement was not just curve-fitting to the validation set.
+  Per the pre-registered rule, it replaced the previous approach. Re-applying the same 15-frame pantry
+  fine-tune on top of this stronger base produced <b>v3</b>, the current deployment model, which detects
+  the hardest real-world test case (a bare shelf) at meaningfully higher confidence than v2 did (0.43
+  versus 0.29).</p>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-08-15</div>
+  <h3>Casting a wider net for training data <span class="pill done">done</span></h3>
+  <p>A search was run across public dataset platforms for additional empty-shelf imagery and, separately,
+  for any real food-pantry photos (the closest match to the actual deployment domain). Four sizable new
+  detection datasets were found and downloaded. One risk surfaced immediately: several of the new sources
+  and the sources already pooled appeared to be different exported versions of the same underlying
+  photographs by the same authors, which would silently duplicate images between the training set and the
+  validation set and make later results look artificially good.</p>
+  <p>Every image was fingerprinted (a perceptual hash, robust to resizing and re-compression) and checked
+  against the frozen validation and test sets before being added. 809 duplicates were caught and dropped,
+  including 56 that would have leaked into validation.</p>
+  <figure>
+  <div class="fig-scroll">
+  <svg viewBox="0 0 900 220" role="img" aria-label="Training pool size over the day: 4860 images after the initial pooling, 5472 after adding one more source, 12433 after adding four more sources and removing 809 duplicates. Validation and test sets stayed fixed at 297 and 156 images throughout.">
+    <g font-family="Seravek,system-ui,sans-serif" font-size="13">
+      <line x1="70" y1="180" x2="860" y2="180" stroke="currentColor" stroke-width="1.4"/>
+      <g fill="var(--cam)">
+        <rect x="110" y="132" width="90" height="48" rx="2"/>
+        <rect x="380" y="126" width="90" height="54" rx="2"/>
+        <rect x="650" y="30" width="90" height="150" rx="2"/>
+      </g>
+      <text x="155" y="122" text-anchor="middle" fill="currentColor" font-weight="600">4,860</text>
+      <text x="155" y="200" text-anchor="middle" fill="var(--muted)">6 sources pooled</text>
+      <text x="425" y="116" text-anchor="middle" fill="currentColor" font-weight="600">5,472</text>
+      <text x="425" y="200" text-anchor="middle" fill="var(--muted)">+1 source</text>
+      <text x="695" y="20" text-anchor="middle" fill="currentColor" font-weight="600">12,433</text>
+      <text x="695" y="200" text-anchor="middle" fill="var(--muted)">+4 sources, deduped</text>
+      <text x="465" y="215" text-anchor="middle" fill="var(--muted)" font-size="12">training images (validation fixed at 297, test fixed at 156, throughout)</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption>Training pool growth. The validation and test splits were never touched, so every mAP
+  number on this page is comparable to every other one.</figcaption>
+  </figure>
+  <p>The pantry-domain search came back thin: the closest match was a small (~220 image) academic pantry
+  photo set, labeled for identifying items rather than empty shelves, of limited direct use but a useful
+  data point that pantry-specific imagery is genuinely scarce in public datasets.</p>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-08-15</div>
+  <h3>EXP-005: retraining on the expanded pool <span class="pill running">running</span></h3>
+  <p>The current deployment base is being retrained on the expanded, deduplicated pool of 12,433 images
+  (2.6 times the original), fine-tuning from the SKU-110K pretrained weights, on Kaggle. It is judged
+  against the same fixed validation split as every prior experiment: 0.920 mAP50 is the number to beat.
+  This entry will be updated with the result.</p>
+</div>
+
+</div><!-- /timeline -->
+
+<div class="nav">
+  <a href="index.html">&larr; Back to project home</a> &middot;
+  <a href="report.html">Phase Zero Report</a> &middot;
+  <a href="survey.html">Building 27 Pantry Survey</a>
+</div>
+</div>
+</body></html>
