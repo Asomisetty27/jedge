@@ -315,12 +315,31 @@
   silently went missing; every eval table now gets its n verified first.</p>
 </div>
 
+<div class="entry setback">
+  <div class="entry-date">2026-08-15</div>
+  <h3>Setback: more data made the model much worse <span class="pill setback">setback</span></h3>
+  <p>The retrain on the expanded 12,433-image pool finished with <b>0.659 mAP50, a 26-point collapse</b>
+  from the 0.920 baseline. Adding 2.6 times the training data produced a dramatically worse model.
+  Diagnosis took about twenty minutes and found real label poisoning:</p>
+  <ul class="tight">
+    <li>One new source shipped with two annotation classes. Its second class was genuine empty-slot
+    labels (6,119 boxes), but its first class was <b>130,733 boxes drawn around products</b>. The merge
+    step collapsed all classes to "gap", so the training set taught the model that products are gaps.
+    That single source injected more wrong labels than the rest of the pool has correct ones.</li>
+    <li>A second source turned out to be industrial pallet-rack imagery with boxes drawn over bays that
+    contain stock: wrong domain and doubtful labels.</li>
+  </ul>
+  <p>Rendering sample images with their merged boxes made both problems obvious in seconds; the lesson
+  is that this rendering step belongs <em>before</em> training, not after. Fix: the poisoned source was
+  re-added keeping only its genuine empty-slot class (verified visually: boxes now sit on real gaps),
+  the pallet-rack source was dropped entirely, and the cleaned 11,624-image pool was re-uploaded.
+  The retrain is running again. The bar is unchanged: 0.920 on the same frozen validation split.</p>
+</div>
+
 <div class="entry">
   <div class="entry-date">2026-08-15</div>
-  <h3>EXP-005: retraining on the expanded pool <span class="pill running">running</span></h3>
-  <p>The current deployment base is being retrained on the expanded, deduplicated pool of 12,433 images
-  (2.6 times the original), fine-tuning from the SKU-110K pretrained weights, on Kaggle. It is judged
-  against the same fixed validation split as every prior experiment: 0.920 mAP50 is the number to beat.
+  <h3>EXP-005 (second run): retraining on the cleaned pool <span class="pill running">running</span></h3>
+  <p>Fine-tuning from the SKU-110K pretrained weights on the cleaned, deduplicated 11,624-image pool.
   This entry will be updated with the result.</p>
 </div>
 
