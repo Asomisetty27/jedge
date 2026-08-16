@@ -291,6 +291,32 @@
 
 <div class="entry">
   <div class="entry-date">2026-08-15</div>
+  <h3>EXP-006: does the model's percentage match reality <span class="pill done">done</span></h3>
+  <p>Every result so far used mAP, a score for bounding boxes. But the system's real output is a
+  percentage on a staff summary ("shelf 3 is 30% full"), so a separate question matters: how far off
+  is that percentage? A held-out dataset reserved since the first day of planning answers it: 180 shelf
+  images from three sources where every gap pixel was hand-traced by researchers, giving exact
+  ground-truth gap fractions to compare against.</p>
+  <table>
+    <tr><th>Model generation</th><th>Mean occupancy error</th><th>Gap localization (IoU)</th></tr>
+    <tr><td>v1: baseline</td><td class="num">14.6 points</td><td class="num">0.166</td></tr>
+    <tr><td>SKU-pretrained base</td><td class="num">14.2 points</td><td class="num">0.179</td></tr>
+    <tr><td><b>v3: current deployment model</b></td><td class="num"><b>11.8 points</b></td><td class="num"><b>0.250</b></td></tr>
+  </table>
+  <p>An error of ~12 occupancy points is compatible with the digest's design, which reports coarse
+  levels (EMPTY / LOW / OK, each spanning 25 to 40 points) rather than precise percentages, with a
+  persistence filter absorbing flicker near level boundaries.</p>
+  <p><b>Near-miss worth recording:</b> the first run of this evaluation silently paired only 59 of the
+  180 images. One source names its files differently (image <span style="font-family:ui-monospace,Menlo,monospace">100jpg.jpg</span>
+  for mask <span style="font-family:ui-monospace,Menlo,monospace">100.tiff</span>) and the pairing code
+  missed the pattern, dropping two-thirds of the evaluation without any error message. On the truncated
+  set the model ranking was <em>inverted</em>: v3 looked worst. Only checking the image count against the
+  expected total exposed it. The conclusion an evaluation produces can depend entirely on data that
+  silently went missing; every eval table now gets its n verified first.</p>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-08-15</div>
   <h3>EXP-005: retraining on the expanded pool <span class="pill running">running</span></h3>
   <p>The current deployment base is being retrained on the expanded, deduplicated pool of 12,433 images
   (2.6 times the original), fine-tuning from the SKU-110K pretrained weights, on Kaggle. It is judged
