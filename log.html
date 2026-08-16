@@ -384,6 +384,26 @@
   The current model (v3) enters the semester as the final Phase 0 model.</p>
 </div>
 
+<div class="entry">
+  <div class="entry-date">2026-08-16</div>
+  <h3>EXP-008: manufacturing pantry data <span class="pill done">done</span></h3>
+  <p>With public data closed, one lever remained reachable before any camera exists: synthesizing
+  pantry-domain training images by compositing verified gap crops from the labeled frames into other
+  pantry frames. The first attempt failed its own inspection gate twice before training even started
+  (one donor crop contained a volunteer's arm; another was freezer interior that looked alien pasted
+  on wood shelving), which is the inspection process working as designed.</p>
+  <p>Two training rounds against the pre-registered bar: the synthetic-augmented model <b>doubled its
+  confidence on the hardest real gap (0.43 to 0.86)</b> with near-clean false-positive behavior, but
+  its occupancy calibration regressed slightly both rounds (11.9 vs 10.9 points), so by the rule it
+  was not adopted. The mechanistic read: pasted crops teach what pantry gaps look like but their
+  arbitrary sizes distort how much area the model attributes to them.</p>
+  <p>The takeaway is a prediction: if artificial pantry data moves recognition this much, real
+  on-site imagery, with correct sizes in correct contexts, should capture the gain without the
+  calibration cost. That is now the strongest quantitative argument for the data collection planned
+  in the first weeks of the semester. The deployment model remains v3; the week-2 hardware bring-up
+  is now scripted end to end (flash, build engine, calibrate, run as an auto-restarting service).</p>
+</div>
+
 <div class="nav">
   <a href="index.html">&larr; Back to project home</a> &middot;
   <a href="report.html">Phase Zero Report</a> &middot;
