@@ -449,6 +449,37 @@
   it is expected in the first week of September.</p>
 </div>
 
+<div class="entry">
+  <div class="entry-date">2026-08-17</div>
+  <h3>Dress rehearsal: four defects the benchmarks could not see <span class="pill done">done</span></h3>
+  <p>Before the hardware arrives, the full monitoring loop was run against a live camera in
+  daylight rather than the simulated frames used until now. The model was never the point of the
+  exercise. The point was everything around it: opening a camera, waiting for it to expose
+  correctly, pacing readings, and writing the message staff actually read. <b>Four defects
+  surfaced, none of which existed in simulation, and all four were fixed.</b></p>
+  <p>The most serious one is worth stating plainly. The out-of-distribution guard did its job
+  perfectly: pointed at the wrong scene, it refused every single frame and recorded why. But the
+  daily staff digest rendered that state as <b>"All 0 shelves OK. Nothing needs attention."</b>
+  A monitor that had measured absolutely nothing was reporting good news. In deployment, a bumped
+  camera or a drifted calibration would leave pantry staff reassured while the system sat blind.
+  The digest now says "NO READINGS YET" and explains what to check. Blindness has to be louder
+  than an empty shelf.</p>
+  <p>The other three were quieter but would each have stalled the hardware bring-up. The interval
+  setting that is supposed to take one reading per minute was never applied, so the loop ran the
+  detector on every incoming frame, roughly a thousandfold more work than intended and a
+  continuous load on a device meant to idle between readings. The camera was never released after
+  use, which leaves the device locked and makes the next start hang forever, precisely the
+  calibrate-then-start sequence the deployment script uses. And calibration captured its
+  reference from the very first frame, before automatic exposure had settled, recording a
+  brightness of 35 for a scene that stabilizes at 143 a second later; that single early frame
+  then caused every subsequent reading to be rejected as out of range.</p>
+  <p>The lesson generalizes past this project. Accuracy metrics measure the model; they say
+  nothing about the seams between a camera and a model, and those seams are where an unattended
+  system actually fails. For a deployment whose entire premise is running quietly for months
+  without supervision, a monitor that reports its own blindness as normal is a more dangerous
+  defect than any accuracy shortfall, and no benchmark would ever have caught it.</p>
+</div>
+
 </div><!-- /timeline -->
 
 <div class="nav">
