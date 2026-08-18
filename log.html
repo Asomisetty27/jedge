@@ -480,6 +480,31 @@
   defect than any accuracy shortfall, and no benchmark would ever have caught it.</p>
 </div>
 
+<div class="entry">
+  <div class="entry-date">2026-08-17</div>
+  <h3>Writing the report, and auditing its own numbers <span class="pill done">done</span></h3>
+  <p>With the hardware a week away and site access gated on a partner introduction, the highest
+  value work left was the deliverable itself. Every section of the final report that does not
+  depend on fall data is now written as prose rather than outline: motivation and the measurement
+  caveats around campus food insecurity statistics, related work and the corrected novelty
+  position, the justice-centered design commitments, the system design, the site
+  characterization method, the full arc of data experiments, and the evaluation protocol with
+  its results. What remains genuinely requires the deployment to exist.</p>
+  <p>Writing it surfaced something worth recording. A systematic sweep of every underlying page
+  found the same quantities stated slightly differently in different places, because pages were
+  written weeks apart as results arrived. The occupancy error figure appeared without the
+  confidence threshold it depends on, and that threshold had itself moved. The pantry adaptation
+  set was described once by its labelled size and once by its training split. Dataset growth was
+  described with multipliers that referenced different baselines. None of these were errors of
+  fact, and every one of them was a chance to publish two numbers that contradict each other.</p>
+  <p>They are now fixed to one convention each in a single reference page, which the report, the
+  poster, and this site all defer to. Two stale lines in the experiment records were corrected at
+  the source. The exercise also forced a more honest statement of one claim: the promise that raw
+  images are never stored is enforced in code for the deployed monitor, but it cannot cover the
+  training-image collection that necessarily retains labelled frames. The report now says so
+  explicitly rather than letting a clean sentence do work the architecture does not do.</p>
+</div>
+
 </div><!-- /timeline -->
 
 <div class="nav">
