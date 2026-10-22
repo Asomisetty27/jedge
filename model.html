@@ -1,0 +1,794 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Building 27 Pantry Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a working bench. Room model left, the webcam's own view right, controls and the dimension ledger below. */
+:root {
+  --paper: #FAF7F1; --ink: #2B2622; --muted: #7D746A; --line: #D9D2C6;
+  --brick: #A8703D; --brick-soft: #EFE3D3; --cam: #1E5C3A; --cam-soft: #DCE9E0;
+  --flag: #9A6F1C; --flag-soft: #F3E6C8; --card: #FFFEFA; --scene: #EDE8DF;
+  --est: #6B5B95; --est-soft: #E7E2F1;
+  --f-display: "Jost", "Futura", "Avenir Next", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Seravek", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #211D19; --ink: #EDE7DE; --muted: #A39A8F; --line: #3D3831;
+    --brick: #C98F55; --brick-soft: #3A2F23; --cam: #6FB98E; --cam-soft: #24352B;
+    --flag: #D9B062; --flag-soft: #3B321F; --card: #29251F; --scene: #1A1714;
+    --est: #ABA0D6; --est-soft: #2F2A3D; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #211D19; --ink: #EDE7DE; --muted: #A39A8F; --line: #3D3831;
+  --brick: #C98F55; --brick-soft: #3A2F23; --cam: #6FB98E; --cam-soft: #24352B;
+  --flag: #D9B062; --flag-soft: #3B321F; --card: #29251F; --scene: #1A1714;
+  --est: #ABA0D6; --est-soft: #2F2A3D; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+}
+.wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 20px; }
+header { display: grid; gap: 4px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 500; font-size: clamp(26px, 4vw, 38px); line-height: 1.1; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--f-display); font-weight: 500; font-size: 20px; margin: 0; }
+.lede { margin: 0; max-width: 68ch; color: var(--muted); }
+.stage { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 6px; display: grid; gap: 10px; padding: 12px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; }
+.viewport { position: relative; width: 100%; aspect-ratio: 4 / 3; max-width: 100%; border-radius: 4px; overflow: hidden; background: var(--scene); }
+.viewport canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.sensor { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 4px; overflow: hidden; background: #000; }
+.sensor canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+button, select {
+  font: 500 13px/1 var(--f-body); color: var(--ink); background: var(--paper); border: 1px solid var(--line);
+  border-radius: 4px; padding: 7px 10px; cursor: pointer;
+}
+button:hover, select:hover { border-color: var(--cam); }
+button[aria-pressed="true"] { background: var(--cam-soft); border-color: var(--cam); color: var(--ink); }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--cam); outline-offset: 2px; }
+.readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.stat { display: grid; gap: 2px; padding: 8px 10px; border-radius: 4px; background: var(--paper); border: 1px solid var(--line); min-width: 0; }
+.stat .k { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.stat .v { font-family: var(--f-mono); font-size: 17px; font-variant-numeric: tabular-nums; }
+.gate { font-family: var(--f-mono); font-size: 13px; padding: 6px 10px; border-radius: 4px; background: var(--cam-soft); }
+.gate.held { background: var(--flag-soft); }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 20px; }
+.ctl { display: grid; gap: 4px; min-width: 0; }
+.ctl label { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.ctl label output { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.ctl .hint { font-size: 12px; color: var(--muted); }
+input[type=range] { width: 100%; accent-color: var(--cam); }
+.chip { display: inline-block; font: 500 11px/1 var(--f-mono); letter-spacing: .04em; padding: 4px 6px; border-radius: 3px; white-space: nowrap; }
+.c-meas { background: var(--cam-soft); color: var(--cam); }
+.c-der { background: var(--brick-soft); color: var(--brick); }
+.c-photo { background: var(--flag-soft); color: var(--flag); }
+.c-est { background: var(--est-soft); color: var(--est); }
+.c-std { background: var(--paper); color: var(--muted); border: 1px solid var(--line); }
+.ledger-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 13px; color: var(--muted); align-items: center; }
+.notes { display: grid; gap: 6px; max-width: 76ch; }
+.notes p { margin: 0; }
+pre#roiOut { margin: 0; font: 12px/1.45 var(--f-mono); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 10px; max-height: 220px; overflow: auto; white-space: pre; }
+.small { font-size: 12px; color: var(--muted); }
+.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.finding { display: grid; gap: 6px; align-content: start; padding: 12px; border-radius: 4px; background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--sev, var(--cam)); min-width: 0; }
+.finding:last-child { grid-column: 1 / -1; }
+.finding.warn { --sev: var(--flag); }
+.finding.info { --sev: var(--est); }
+.finding .q { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.finding .a { font-family: var(--f-display); font-size: 21px; font-weight: 500; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.finding p { margin: 0; font-size: 13.5px; }
+.finding .so { color: var(--muted); }
+.mini { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 0; }
+.mini td, .mini th { padding: 3px 6px 3px 0; border-bottom: 1px solid var(--line); }
+.mini td + td, .mini th + th { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<style>body{margin:0}.sitenav{padding-top:8px;border-top:1px solid var(--line)}.sitenav a{color:var(--cam)}</style>
+</head><body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Justice-Centered Edge AI · Cal Poly Food Pantry · model in inches, 1:1</div>
+    <h1>Building 27 Pantry Model</h1>
+    <p class="lede">The dry-goods room rebuilt from the 2026-10-21 tape measurements, the visit photos, and the corrected video estimates. The right panel renders what the webcam on the black storage cabinet would see, with per-cubby regions projected live. Move a slider and every number updates.</p>
+  </header>
+
+  <section class="panel" aria-labelledby="fHead">
+    <div class="panel-head">
+      <h2 id="fHead">What this setup means for the project</h2>
+      <span class="small">Recomputed from the geometry on every change</span>
+    </div>
+    <div class="findings" id="findings"></div>
+  </section>
+
+  <section class="stage">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Room</h2>
+        <div class="btns" role="group" aria-label="Room view">
+          <button id="vOverview" aria-pressed="true">Overview</button>
+          <button id="vPlan" aria-pressed="false">Plan</button>
+          <button id="vBehind" aria-pressed="false">Behind the camera</button>
+        </div>
+      </div>
+      <div class="viewport" id="mainVp"><canvas id="mainCv" aria-label="3D model of the pantry room. Drag to orbit, scroll to zoom."></canvas></div>
+      <div class="legend">
+        <span>Drag to orbit, scroll or pinch to zoom.</span>
+        <span><span class="chip c-meas">green</span> camera coverage on the cubby face</span>
+        <span><span class="chip c-photo">dashed</span> extension cord, outlet to cabinet top</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Webcam view</h2>
+        <span class="small" id="sensorLabel">C920 · 1920 × 1080</span>
+      </div>
+      <div class="sensor" id="sensorVp">
+        <canvas id="sensorCv" aria-label="Simulated webcam frame from the cabinet top"></canvas>
+        <canvas id="roiCv" aria-hidden="true"></canvas>
+      </div>
+      <div class="gate" id="gate">Frame clear, reading allowed</div>
+      <div class="readout">
+        <div class="stat"><span class="k">Columns in frame</span><span class="v" id="rCols">-</span></div>
+        <div class="stat"><span class="k">Openings tracked</span><span class="v" id="rOpen">-</span></div>
+        <div class="stat"><span class="k">Resolution</span><span class="v" id="rPpi">-</span></div>
+        <div class="stat"><span class="k">Opening in px</span><span class="v" id="rOpPx">-</span></div>
+        <div class="stat"><span class="k">Width on face</span><span class="v" id="rFoot">-</span></div>
+        <div class="stat"><span class="k">Tilt down</span><span class="v" id="rTilt">-</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Set up the shot</h2>
+      <div class="btns">
+        <button id="restock">New stock day</button>
+        <button id="personBtn" aria-pressed="false">Shopper in aisle</button>
+        <button id="resetBtn">Reset to measured</button>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="ctl">
+        <label for="lens">Webcam <output id="lensOut">C920</output></label>
+        <select id="lens">
+          <option value="c920">Logitech C920 (likely, confirm on box)</option>
+          <option value="c270">Logitech C270 (if it is 720p)</option>
+          <option value="wide">110° wide lens (all 9 columns)</option>
+        </select>
+        <span class="hint">C920: 70.42° H × 43.3° V per Logitech spec.</span>
+      </div>
+      <div class="ctl">
+        <label for="camX">Camera position from left end <output id="camXOut"></output></label>
+        <input type="range" id="camX" min="0" max="216" step="1" value="73">
+        <span class="hint">Measured 73 in. Cabinet top spans about 55 to 91 in.</span>
+      </div>
+      <div class="ctl">
+        <label for="standoff">Standoff to cubby face <output id="standoffOut"></output></label>
+        <input type="range" id="standoff" min="60" max="90" step="1" value="76">
+        <span class="hint">Measured 76 in.</span>
+      </div>
+      <div class="ctl">
+        <label for="gap">Counter to cubby underside <output id="gapOut"></output></label>
+        <input type="range" id="gap" min="8" max="21" step="0.5" value="13.5">
+        <span class="hint">Not measured. Video said 16 to 21 in; scaled by the 0.73 vertical correction.</span>
+      </div>
+      <div class="ctl">
+        <label for="depth">Cubby depth <output id="depthOut"></output></label>
+        <input type="range" id="depth" min="10" max="16" step="0.5" value="13">
+        <span class="hint">Not measured. Video estimate 12 to 14 in.</span>
+      </div>
+      <div class="ctl">
+        <label for="lift">Lens above cabinet top <output id="liftOut"></output></label>
+        <input type="range" id="lift" min="0.5" max="8" step="0.5" value="2.5">
+        <span class="hint">C920 folded flat on a surface sits about 2 to 3 in tall.</span>
+      </div>
+      <div class="ctl">
+        <label for="fill">Average stock level <output id="fillOut"></output></label>
+        <input type="range" id="fill" min="0" max="1" step="0.05" value="0.6">
+        <span class="hint">Each cubby varies around this. Rows stock one brand, front-faced.</span>
+      </div>
+      <div class="ctl">
+        <label for="personX">Shopper position <output id="personXOut"></output></label>
+        <input type="range" id="personX" min="10" max="210" step="1" value="80">
+        <span class="hint">Turn on "Shopper in aisle" to test the person gate.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Cubby regions from this view</h2>
+      <div class="btns"><button id="copyRoi">Copy ROI JSON</button></div>
+    </div>
+    <p class="small" style="margin:0">Bounding boxes of each fully visible opening, in sensor pixels, in the <code>rois/*.json</code> format the monitor reads. These are a better starting point than the flat nominal grid because they include the tilt and perspective. Still replace them with a real calibration frame.</p>
+    <pre id="roiOut"></pre>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Where every dimension comes from</h2>
+      <div class="legend">
+        <span class="chip c-meas">Measured</span><span class="chip c-photo">Photos</span><span class="chip c-der">Derived</span><span class="chip c-est">Estimated</span><span class="chip c-std">Assumed</span>
+      </div>
+    </div>
+    <div class="ledger-wrap">
+      <table>
+        <thead><tr><th>Dimension</th><th>Value</th><th>Source</th><th>Basis</th></tr></thead>
+        <tbody id="ledger"></tbody>
+      </table>
+    </div>
+    <div class="notes small">
+      <p>Plan, as you walk in: the cubbies are straight across on the brick wall and run the full length. The left (west) wall is brick with the glass fridges. The right (east) wall has the whiteboards. The door wall holds the SABA, the crates, and the camera cabinet, whose doors face the cubbies. Positions along the run are measured from the cubbies' left end.</p>
+      <p>The video estimates got horizontal sizes right and overstated vertical ones by about 27% (opening height 13.5 in estimated vs 9.85 measured, unit 30 vs 22). Every vertical value still unmeasured is scaled by that 0.73 factor and marked Estimated.</p>
+      <p>Still unmeasured: total room length, where the run starts relative to the west wall, the counter-to-cubby gap, and the cubby depth. Each is marked Estimated below.</p>
+    </div>
+  </section>
+  <nav class="sitenav small" aria-label="Site">
+    <a href="index.html">&larr; Project home</a> &middot; <a href="log.html">Research Log</a> &middot; <a href="survey.html">Building 27 Pantry Survey</a>
+  </nav>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  "use strict";
+  // ---------- Fixed geometry (inches) ----------
+  const COLS = 9, PITCH = 24, UNIT_H = 22, OP_W = 22.8, OP_H = 9.85;
+  const RAIL = (UNIT_H - 2 * OP_H) / 3, SIDE = (PITCH - OP_W) / 2;
+  const RUN = COLS * PITCH;              // 216, matches measured counter
+  const COUNTER_H = 36, COUNTER_D = 25;
+  const CAB_W = 36, CAB_D = 18, CAB_H = 72;   // stands sideways: 18 in along the run, 36 in toward the door wall
+  const GAP_FRIDGE = 14, FRIDGE_W = 54, FRIDGE_D = 31, FRIDGE_H = 82;
+  const RACK_W = 48, RACK_D = 18, RACK_H = 74;
+  // Plan (Amogh, 2026-10-21): door at the right end of the long south wall; cubbies on the long north
+  // brick wall straight across from it; west short wall brick with the glass fridges; east short wall
+  // whiteboards. SABA, crates and the camera cabinet sit on the door wall, cabinet doors facing the cubbies.
+  const GLASS_D = 31;                    // glass reach-ins on the west wall; the counter butts their side (video)
+  const X0 = GLASS_D;                    // world x of the cubby run's left (west) end
+  const ROOM_L = 282, CEIL = 102, CAB_X = X0 + 73, PIER_D = CAB_W;
+  const LENSES = {
+    c920: { name: "C920", h: 70.42, v: 43.3, w: 1920, hgt: 1080 },
+    c270: { name: "C270", h: 48.8, v: 28.6, w: 1280, hgt: 720 },
+    wide: { name: "110° wide", h: 110, v: 79.6, w: 1920, hgt: 1080 }
+  };
+  const DEFAULTS = { lens: "c920", camX: 73, standoff: 76, gap: 13.5, depth: 13, lift: 2.5, fill: 0.6, personX: 80, person: false };
+  const P = Object.assign({}, DEFAULTS);
+  let seed = 20261021;
+
+  const $ = (id) => document.getElementById(id);
+  const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  if (!window.THREE || !THREE.OrbitControls) {
+    $("mainVp").innerHTML = '<p style="padding:16px">The 3D library did not load. Reload the page to try again.</p>';
+    return;
+  }
+
+  // ---------- Derived layout ----------
+  function layout() {
+    const face = P.depth;                       // cubby face z
+    const lensZ = face + P.standoff;
+    const cabFront = lensZ - 1.5;               // lens sits just behind the cabinet's front edge
+    const W = cabFront + CAB_W;                 // sideways cabinet reaches the door wall                 // N wall
+    const unitBot = COUNTER_H + P.gap;
+    return { face, lensZ, cabFront, W, unitBot, lensY: CAB_H + P.lift };
+  }
+
+  // ---------- Textures ----------
+  function canvasTex(w, h, draw, rx, ry) {
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    draw(c.getContext("2d"), w, h);
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry); t.encoding = THREE.sRGBEncoding;
+    t.anisotropy = 4;
+    return t;
+  }
+  // 32 x 32 in tile: modular brick 7.625 x 2.25 with 3/8 joints (8 x 2.667 in coursing)
+  const brickTex = canvasTex(512, 512, (g, w, h) => {
+    g.fillStyle = "#cdbca3"; g.fillRect(0, 0, w, h);
+    const s = w / 32, cw = 8 * s, ch = (8 / 3) * s;
+    let r = 0;
+    for (let y = 0; y < h + ch; y += ch, r++) {
+      for (let x = (r % 2 ? -cw / 2 : 0); x < w; x += cw) {
+        const k = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453; const n = k - Math.floor(k);
+        g.fillStyle = `rgb(${176 + n * 26 | 0},${132 + n * 20 | 0},${92 + n * 14 | 0})`;
+        g.fillRect(x + 0.19 * s, y + 0.19 * s, cw - 0.38 * s, ch - 0.38 * s);
+      }
+    }
+  }, ROOM_L / 32, CEIL / 32);
+  const floorTex = canvasTex(512, 512, (g, w, h) => {
+    const plank = w / 8;
+    for (let i = 0; i < 8; i++) {
+      const n = (Math.sin(i * 91.7) + 1) / 2;
+      g.fillStyle = `rgb(${168 + n * 22 | 0},${170 + n * 22 | 0},${170 + n * 20 | 0})`;
+      g.fillRect(0, i * plank, w, plank - 2);
+      g.fillStyle = "rgba(90,90,90,.35)"; g.fillRect(((i * 197) % w), i * plank, 2, plank);
+    }
+  }, ROOM_L / 56, 120 / 56);
+
+  // ---------- Scene ----------
+  const scene = new THREE.Scene();
+  const mat = (color, extra) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.85, metalness: 0 }, extra || {}));
+  const M = {
+    brick: mat(0xffffff, { map: brickTex }),
+    pier: mat(0xffffff, { map: (() => { const t = brickTex.clone(); t.repeat.set(86 / 32, CEIL / 32); t.needsUpdate = true; return t; })() }),
+    drywall: mat(0xe9e1d2), floor: mat(0xffffff, { map: floorTex }),
+    counter: mat(0xb9b3a8, { roughness: 0.6 }), base: mat(0x8c7a64),
+    cubby: mat(0xc9a77c, { roughness: 0.7 }), cubbyBack: mat(0xb08e64),
+    cabinet: mat(0x1d1d1f, { roughness: 0.45, metalness: 0.3 }),
+    steel: mat(0xb8bcbf, { roughness: 0.35, metalness: 0.7 }),
+    paper: mat(0x2f7d5b, { roughness: 0.95 }),
+    crate: mat(0x222222, { roughness: 0.7 }), wire: mat(0xc7c9cb, { roughness: 0.3, metalness: 0.8 }),
+    jetson: mat(0x2c3a2f, { roughness: 0.5 }), cam: mat(0x111111, { roughness: 0.3 }),
+    outlet: mat(0xf2efe6), board: mat(0xf7f7f4, { roughness: 0.3 }), glass: mat(0x9fc6d6, { transparent: true, opacity: 0.35, roughness: 0.1 }), led: mat(0xffffff, { emissive: 0xffffff, emissiveIntensity: 1 }), cardboard: mat(0xb08a5a), person: mat(0x39424e), skin: mat(0xb88a6a), door: mat(0x9aa3a8, { roughness: 0.3, metalness: 0.4, transparent: true, opacity: 0.55 })
+  };
+  const box = (w, h, d, m, x, y, z, parent) => { // x,y,z = min corner
+    const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+    o.position.set(x + w / 2, y + h / 2, z + d / 2); (parent || scene).add(o); return o;
+  };
+  const plane = (w, h, m, pos, rotY, rotX) => {
+    const o = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
+    o.position.copy(pos); if (rotY) o.rotation.y = rotY; if (rotX) o.rotation.x = rotX; scene.add(o); return o;
+  };
+
+  scene.add(new THREE.HemisphereLight(0xfff6e8, 0x6b6359, 0.75));
+  [[55, 60], [165, 60]].forEach(([x, z]) => { const l = new THREE.PointLight(0xfff1dc, 0.55, 420, 1.2); l.position.set(x, CEIL - 4, z); scene.add(l); });
+  const sun = new THREE.DirectionalLight(0xffffff, 0.25); sun.position.set(120, 200, 140); scene.add(sun);
+
+  let dyn = new THREE.Group(); scene.add(dyn);     // everything that depends on sliders
+  let stock = new THREE.Group(); scene.add(stock);
+  let helpers = new THREE.Group(); scene.add(helpers);
+  const person = new THREE.Group();
+  (function buildPerson() {
+    const legs = new THREE.Mesh(new THREE.CylinderGeometry(6.5, 5.5, 32, 16), M.person); legs.position.y = 16;
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(7.5, 7, 25, 16), M.person); torso.position.y = 44.5;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(4.5, 16, 12), M.skin); head.position.y = 62;
+    person.add(legs, torso, head); scene.add(person);
+  })();
+
+  function buildRoom() {
+    scene.remove(dyn); dyn = new THREE.Group(); scene.add(dyn);
+    const L = layout(), add = (o) => (dyn.add(o), o);
+    const B = (w, h, d, m, x, y, z) => box(w, h, d, m, x, y, z, dyn);
+    // floor and walls (single-sided, facing inward, so the model opens up from outside)
+    const fl = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_L, L.W), M.floor); fl.rotation.x = -Math.PI / 2; fl.position.set(ROOM_L / 2, 0, L.W / 2); add(fl);
+    const nw = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_L, CEIL), M.brick); nw.position.set(ROOM_L / 2, CEIL / 2, 0); add(nw);
+    const sw = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_L, CEIL), M.drywall); sw.rotation.y = Math.PI; sw.position.set(ROOM_L / 2, CEIL / 2, L.W); add(sw);
+    const ww = new THREE.Mesh(new THREE.PlaneGeometry(L.W, CEIL), M.brick); ww.rotation.y = Math.PI / 2; ww.position.set(0, CEIL / 2, L.W / 2); add(ww);
+    const ew = new THREE.Mesh(new THREE.PlaneGeometry(L.W, CEIL), M.drywall); ew.rotation.y = -Math.PI / 2; ew.position.set(ROOM_L, CEIL / 2, L.W / 2); add(ew);
+    // whiteboards on the east wall
+    B(0.5, 36, 48, M.board, ROOM_L - 0.6, 40, 14); B(0.5, 36, 30, M.board, ROOM_L - 0.6, 40, 68);
+    // door: right end of the south wall
+    const door = new THREE.Mesh(new THREE.PlaneGeometry(36, 80), M.door); door.rotation.y = Math.PI; door.position.set(ROOM_L - 26, 40, L.W - 0.2); add(door);
+    // glass reach-ins on the west wall: 1-door at the cubby end, 2-door beyond it
+    [[2, 27], [29, 54]].forEach(([z0, w]) => {
+      B(GLASS_D - 1, FRIDGE_H, w, M.steel, 0, 0, z0);
+      B(0.4, 62, w - 3, M.glass, GLASS_D - 1, 14, z0 + 1.5);
+      for (let h = 22; h < 76; h += 13) B(GLASS_D - 4, 0.6, w - 4, M.wire, 1, h, z0 + 2);
+      B(0.6, 62, 1, M.led, GLASS_D - 0.7, 14, z0 + 1.6); B(0.6, 62, 1, M.led, GLASS_D - 0.7, 14, z0 + w - 2.6);
+    });
+    // counter and base cabinets
+    B(RUN, COUNTER_H - 1.5, COUNTER_D - 1, M.base, X0, 0, 0);
+    B(RUN, 1.5, COUNTER_D, M.counter, X0, COUNTER_H - 1.5, 0);
+    // cubby unit
+    const y0 = L.unitBot, d = P.depth;
+    B(RUN, UNIT_H, 0.5, M.cubbyBack, X0, y0, 0);
+    for (let i = 0; i < 3; i++) B(RUN, RAIL, d, M.cubby, X0, y0 + i * (RAIL + OP_H), 0);
+    for (let c = 0; c <= COLS; c++) B(SIDE * 2, UNIT_H, d, M.cubby, X0 + c * PITCH - SIDE, y0, 0);
+    // black storage cabinet on the door wall, doors facing the cubbies; spare wire baskets on top
+    const cx0 = CAB_X - CAB_D / 2, cx1 = CAB_X + CAB_D / 2;
+    // brick bump-out filling the south-west corner up to the cabinet's left side (depth estimated)
+    B(cx0, CEIL, PIER_D, M.pier, 0, 0, L.W - PIER_D);
+    // back against the bump-out, doors facing east toward the crates and the SABA, one end toward the cubbies
+    B(CAB_D, CAB_H, CAB_W, M.cabinet, cx0, 0, L.cabFront);
+    B(0.2, CAB_H - 4, 0.3, M.steel, cx1, 2, L.cabFront + CAB_W / 2 - 0.15);
+    [-2.5, 2.5].forEach((dz) => B(0.8, 6, 0.6, M.steel, cx1, 40, L.cabFront + CAB_W / 2 + dz - 0.3));
+    [[L.cabFront + 12, 12], [L.cabFront + 24, 11]].forEach(([bz, bw]) => { const g = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(14, 10, bw)), new THREE.LineBasicMaterial({ color: 0x3a3a3a })); g.position.set(CAB_X, CAB_H + 5, bz + bw / 2); dyn.add(g); });
+    // produce stacked on milk crates in front of and beside the cabinet (west side)
+    [[X0 + 12, 0xb5452f], [X0 + 30, 0x3f7d2c], [cx0 - 2, 0x9a7a4a]].forEach(([px, col], i) => {
+      B(13, 21, 13, M.crate, px, 0, L.cabFront - 16 - (i === 2 ? 8 : 0));
+      B(16, 10, 13, M.cardboard, px - 1.5, 21, L.cabFront - 16 - (i === 2 ? 8 : 0));
+      B(14, 2.5, 11, cmat(col), px - 0.5, 29, L.cabFront - 15 - (i === 2 ? 8 : 0));
+    });
+    // gap with milk crates and the duplex outlet
+    const gx = cx1;
+    for (let i = 0; i < 4; i++) B(13, 10.5, 13, M.crate, gx + 0.5, i * 11, L.W - 14);
+    B(2.75, 4.5, 0.4, M.outlet, gx + 5.6, 11, L.W - 0.4);
+    // SABA 2-door reach-in, glass covered in green paper, out of use
+    const fx = gx + GAP_FRIDGE;
+    B(FRIDGE_W, FRIDGE_H, FRIDGE_D, M.steel, fx, 0, L.W - FRIDGE_D);
+    B(FRIDGE_W - 4, 50, 0.3, M.paper, fx + 2, 16, L.W - FRIDGE_D - 0.3);
+    // wire rack (hygiene items) between the SABA and the door
+    const rx = fx + FRIDGE_W + 2;
+    [12, 30, 48, 66, 73].forEach((h) => B(RACK_W, 0.8, RACK_D, M.wire, rx, h, L.W - RACK_D));
+    [[0, 0], [RACK_W - 1, 0], [0, RACK_D - 1], [RACK_W - 1, RACK_D - 1]].forEach(([a, b]) => B(1, RACK_H, 1, M.wire, rx + a, 0, L.W - RACK_D + b));
+    // Jetson and webcam on the cabinet top
+    B(3.6, 1.6, 4, M.jetson, CAB_X - 1.8, CAB_H, L.cabFront + 6);
+    const camWX = X0 + P.camX;
+    B(3.7, 1.2, 1.4, M.cam, camWX - 1.85, L.lensY - 0.6, L.lensZ - 0.7);
+    B(2.6, Math.max(0.1, L.lensY - 0.6 - CAB_H), 1.8, M.cam, camWX - 1.3, CAB_H, L.lensZ - 0.3);
+    return L;
+  }
+
+  // ---------- Stock (seeded so a "stock day" is reproducible) ----------
+  function rng(s) { return function () { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const PALETTE = [0xc0392b, 0xd4a017, 0x2e7d32, 0x1f5fa8, 0xe67e22, 0x8e3b6e, 0xf2e3c6, 0x6d4c41, 0xb71c1c, 0x00838f];
+  const GEO = { can: new THREE.CylinderGeometry(1.5, 1.5, 4.4, 14), lid: new THREE.CylinderGeometry(1.45, 1.45, 0.15, 14) };
+  const matCache = {};
+  const cmat = (hex) => matCache[hex] || (matCache[hex] = mat(hex, { roughness: 0.55 }));
+  let stockStats = [];
+  function buildStock() {
+    scene.remove(stock); stock = new THREE.Group(); scene.add(stock); stockStats = [];
+    const L = layout(), r = rng(seed), d = P.depth;
+    for (let c = 0; c < COLS; c++) for (let row = 0; row < 2; row++) {
+      let f = Math.min(1, Math.max(0, P.fill + (r() - 0.5) * 0.9));
+      const roll = r(); if (roll < 0.1) f = 0; else if (roll > 0.88) f = 1;
+      const kind = r() < 0.5 ? "can" : r() < 0.6 ? "box" : "bag";
+      const color = PALETTE[(r() * PALETTE.length) | 0], m = cmat(color);
+      const x0 = X0 + c * PITCH + SIDE + 0.3, yb = L.unitBot + RAIL + row * (OP_H + RAIL);
+      if (kind === "can") {
+        const n = Math.floor((OP_W - 0.6) / 3.05), use = Math.round(n * f), rows = Math.floor((d - 0.8) / 3.05);
+        let cnt = 0;
+        for (let i = 0; i < use; i++) for (let k = 0; k < rows; k++) {
+          if (k > 0 && r() > f * 0.85) continue;           // facade stocking: back rows thin out first
+          const layers = r() < f ? 2 : 1;
+          for (let s = 0; s < layers; s++) {
+            const o = new THREE.Mesh(GEO.can, m); o.position.set(x0 + 1.5 + i * 3.05, yb + 2.2 + s * 4.45, d - 1.7 - k * 3.05); stock.add(o); cnt++;
+          }
+        }
+        stockStats.push({ col: c + 1, row: row ? "top" : "low", kind: "cans", front: n ? use / n : 0, volume: cnt / Math.max(1, n * rows * 2) });
+      } else if (kind === "box") {
+        const bw = 5.4, n = Math.floor((OP_W - 0.6) / 5.6), use = Math.round(n * f), bh = 7 + r() * 1.9, bd = 2.3;
+        const g = new THREE.BoxGeometry(bw, bh, bd), rows = Math.floor((d - 0.8) / (bd + 0.2));
+        let cnt = 0;
+        for (let i = 0; i < use; i++) for (let k = 0; k < rows; k++) {
+          if (k > 0 && r() > f * 0.8) continue;
+          const o = new THREE.Mesh(g, m); o.position.set(x0 + bw / 2 + i * 5.6, yb + bh / 2, d - 0.5 - bd / 2 - k * (bd + 0.2)); stock.add(o); cnt++;
+        }
+        stockStats.push({ col: c + 1, row: row ? "top" : "low", kind: "boxes", front: n ? use / n : 0, volume: cnt / Math.max(1, n * rows) });
+      } else {
+        const bw = 7, n = Math.floor((OP_W - 0.6) / 7.2), use = Math.round(n * f * 1.0), g = new THREE.BoxGeometry(bw, 3.6, Math.min(9.5, d - 1));
+        let cnt = 0;
+        for (let i = 0; i < use; i++) for (let s = 0; s < 2; s++) {
+          if (s === 1 && r() > f) continue;
+          const o = new THREE.Mesh(g, m); o.position.set(x0 + bw / 2 + i * 7.2, yb + 1.8 + s * 3.7, d - 0.5 - Math.min(9.5, d - 1) / 2); stock.add(o); cnt++;
+        }
+        stockStats.push({ col: c + 1, row: row ? "top" : "low", kind: "bags", front: n ? use / n : 0, volume: cnt / Math.max(1, n * 2) });
+      }
+    }
+  }
+
+  // ---------- Renderers and cameras ----------
+  const mainCv = $("mainCv"), sensorCv = $("sensorCv"), roiCv = $("roiCv");
+  const rMain = new THREE.WebGLRenderer({ canvas: mainCv, antialias: true });
+  const rSens = new THREE.WebGLRenderer({ canvas: sensorCv, antialias: true, preserveDrawingBuffer: true });
+  [rMain, rSens].forEach((r) => { r.outputEncoding = THREE.sRGBEncoding; r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); });
+  const view = new THREE.PerspectiveCamera(48, 4 / 3, 1, 3000);
+  view.layers.enable(1);
+  const sensorCam = new THREE.PerspectiveCamera(43.3, 16 / 9, 0.5, 2000);  // layer 0 only: no helpers in the frame
+  const controls = new THREE.OrbitControls(view, mainCv);
+  controls.enableDamping = false;
+  controls.addEventListener("change", () => renderMain());
+
+  function setView(which) {
+    const L = layout();
+    ["vOverview", "vPlan", "vBehind"].forEach((id) => $(id).setAttribute("aria-pressed", String(id === which)));
+    if (which === "vOverview") { view.position.set(ROOM_L + 60, 190, L.W + 170); controls.target.set(ROOM_L / 2 - 20, 30, L.W / 2); }
+    if (which === "vPlan") { view.position.set(ROOM_L / 2, 380, L.W / 2 + 1); controls.target.set(ROOM_L / 2, 0, L.W / 2); }
+    if (which === "vBehind") { view.position.set(X0 + P.camX + 10, L.lensY + 16, L.W + 10); controls.target.set(X0 + P.camX, L.unitBot + UNIT_H / 2, 0); }
+    controls.update(); renderMain();
+  }
+
+  // ---------- Coverage, projection, ROIs ----------
+  let lastRois = [];
+  function aimSensor(L) {
+    const lens = LENSES[P.lens];
+    sensorCam.fov = lens.v; sensorCam.aspect = lens.w / lens.hgt; sensorCam.updateProjectionMatrix();
+    sensorCam.position.set(X0 + P.camX, L.lensY, L.lensZ);
+    sensorCam.lookAt(X0 + P.camX, L.unitBot + UNIT_H / 2, L.face);
+    sensorCam.updateMatrixWorld(true);
+    return lens;
+  }
+  function toPx(v, lens) {
+    const p = v.clone().project(sensorCam);
+    return { x: (p.x + 1) / 2 * lens.w, y: (1 - p.y) / 2 * lens.hgt, inFront: p.z < 1 && p.z > -1 };
+  }
+  function rayToFace(ndcX, ndcY, L) {
+    const p = new THREE.Vector3(ndcX, ndcY, 0.5).unproject(sensorCam), o = sensorCam.position;
+    const dir = p.sub(o).normalize(), t = (L.face - o.z) / dir.z;
+    return o.clone().add(dir.multiplyScalar(t));
+  }
+  function updateHelpers(L, lens) {
+    scene.remove(helpers); helpers = new THREE.Group(); scene.add(helpers);
+    const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => rayToFace(a, b, L));
+    const camGreen = new THREE.Color(cssVar("--cam") || "#1E5C3A");
+    // footprint quad on the cubby face
+    const g = new THREE.BufferGeometry().setFromPoints([corners[0], corners[1], corners[2], corners[0], corners[2], corners[3]].map((v) => new THREE.Vector3(v.x, v.y, L.face + 0.15)));
+    g.computeVertexNormals();
+    const quad = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: camGreen, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
+    const lineM = new THREE.LineBasicMaterial({ color: camGreen });
+    const pts = []; corners.forEach((c) => pts.push(sensorCam.position.clone(), c));
+    const rays = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), lineM);
+    const rim = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(corners.map((v) => new THREE.Vector3(v.x, v.y, L.face + 0.2))), lineM);
+    // extension cord: outlet up the gap, over the cabinet top to the Jetson
+    const gx = CAB_X + CAB_D / 2 + 5.6 + 1.4;
+    const cord = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(gx, 13, L.W - 0.6), new THREE.Vector3(gx - 6, 13, L.W - 1), new THREE.Vector3(CAB_X + CAB_D / 2 + 0.4, 13, L.W - 2),
+      new THREE.Vector3(CAB_X + CAB_D / 2 + 0.4, CAB_H + 0.4, L.W - 2), new THREE.Vector3(CAB_X + 2, CAB_H + 0.4, L.cabFront + 8)]),
+      new THREE.LineDashedMaterial({ color: new THREE.Color(cssVar("--flag") || "#9A6F1C"), dashSize: 2, gapSize: 1.4 }));
+    cord.computeLineDistances();
+    [quad, rays, rim, cord].forEach((o) => { o.layers.set(1); helpers.add(o); });
+    const mid = [rayToFace(-1, 0, L), rayToFace(1, 0, L)];
+    return mid[1].x - mid[0].x;
+  }
+  function computeRois(L, lens) {
+    const out = [];
+    for (let c = 0; c < COLS; c++) for (let row = 0; row < 2; row++) {
+      const x0 = X0 + c * PITCH + SIDE, x1 = x0 + OP_W, yb = L.unitBot + RAIL + row * (OP_H + RAIL), yt = yb + OP_H;
+      const pts = [[x0, yb], [x1, yb], [x1, yt], [x0, yt]].map(([x, y]) => toPx(new THREE.Vector3(x, y, L.face), lens));
+      const inside = pts.every((p) => p.inFront && p.x >= 0 && p.x <= lens.w && p.y >= 0 && p.y <= lens.hgt);
+      const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+      out.push({ col: c + 1, row: row ? "top" : "low", inside, pts,
+        xywh: [Math.round(Math.min(...xs)), Math.round(Math.min(...ys)), Math.round(Math.max(...xs) - Math.min(...xs)), Math.round(Math.max(...ys) - Math.min(...ys))] });
+    }
+    return out;
+  }
+  function personInFrame(lens) {
+    if (!P.person) return false;
+    const L = layout(), z = personZ(L);
+    for (const x of [P.personX - 8, P.personX + 8]) for (const y of [2, 34, 66]) for (const dz of [-6, 6]) {
+      const p = toPx(new THREE.Vector3(X0 + x, y, z + dz), lens);
+      if (p.inFront && p.x >= 0 && p.x <= lens.w && p.y >= 0 && p.y <= lens.hgt) return true;
+    }
+    return false;
+  }
+  const personZ = (L) => (COUNTER_D + L.cabFront) / 2;
+
+  function drawOverlay(rois, lens) {
+    const ctx = roiCv.getContext("2d"), w = roiCv.width, h = roiCv.height, sx = w / lens.w, sy = h / lens.hgt;
+    ctx.clearRect(0, 0, w, h);
+    ctx.lineWidth = Math.max(1.5, w / 600); ctx.font = `${Math.max(10, w / 70)}px "IBM Plex Mono", monospace`;
+    rois.filter((r) => r.inside).forEach((r) => {
+      ctx.strokeStyle = "rgba(120,230,160,.95)"; ctx.beginPath();
+      r.pts.forEach((p, i) => (i ? ctx.lineTo(p.x * sx, p.y * sy) : ctx.moveTo(p.x * sx, p.y * sy))); ctx.closePath(); ctx.stroke();
+      ctx.fillStyle = "rgba(10,30,18,.7)"; const label = `c${r.col} ${r.row}`, tw = ctx.measureText(label).width;
+      ctx.fillRect(r.xywh[0] * sx + 3, r.xywh[1] * sy + 3, tw + 8, Math.max(14, w / 55));
+      ctx.fillStyle = "#d8f5e2"; ctx.fillText(label, r.xywh[0] * sx + 7, r.xywh[1] * sy + Math.max(12, w / 64));
+    });
+  }
+
+  // ---------- Render ----------
+  function sizeRenderer(r, cv, cam) {
+    const w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
+    const pr = r.getPixelRatio();
+    if (cv.width !== Math.round(w * pr) || cv.height !== Math.round(h * pr)) r.setSize(w, h, false);
+    if (cam) { cam.aspect = w / h; cam.updateProjectionMatrix(); }
+  }
+  function bg() { const c = new THREE.Color(cssVar("--scene") || "#EDE8DF"); scene.background = c; }
+  function renderMain() { sizeRenderer(rMain, mainCv, view); bg(); rMain.render(scene, view); }
+  function renderSensor() {
+    const L = layout(), lens = aimSensor(L);
+    sizeRenderer(rSens, sensorCv, null);
+    sensorCam.aspect = lens.w / lens.hgt; sensorCam.updateProjectionMatrix();
+    scene.background = new THREE.Color(0x111111); rSens.render(scene, sensorCam);
+    roiCv.width = sensorCv.clientWidth * (window.devicePixelRatio || 1); roiCv.height = sensorCv.clientHeight * (window.devicePixelRatio || 1);
+    const rois = computeRois(L, lens); lastRois = rois; drawOverlay(rois, lens); return { L, lens, rois };
+  }
+
+  function update(rebuild) {
+    const L = buildRoom(); if (rebuild !== false) buildStock();
+    person.visible = P.person; person.position.set(X0 + P.personX, 0, personZ(L));
+    const lens = aimSensor(L);
+    const foot = updateHelpers(L, lens);
+    const { rois } = renderSensor();
+    renderMain();
+    // readouts
+    const vis = rois.filter((r) => r.inside), cols = [...new Set(vis.map((r) => r.col))].sort((a, b) => a - b);
+    const range = cols.length ? (cols.length > 1 && cols[cols.length - 1] - cols[0] === cols.length - 1 ? `${cols[0]}–${cols[cols.length - 1]}` : cols.join(", ")) : "none";
+    $("rCols").textContent = range;
+    $("rOpen").textContent = `${vis.length} of 18`;
+    const pw = vis.length ? vis.reduce((a, r) => a + r.xywh[2], 0) / vis.length : 0, ph = vis.length ? vis.reduce((a, r) => a + r.xywh[3], 0) / vis.length : 0;
+    $("rPpi").textContent = vis.length ? `${(pw / OP_W).toFixed(1)} px/in` : "-";
+    $("rOpPx").textContent = vis.length ? `${Math.round(pw)} × ${Math.round(ph)}` : "-";
+    $("rFoot").textContent = `${foot.toFixed(0)} in`;
+    const tilt = Math.atan2(L.lensY - (L.unitBot + UNIT_H / 2), L.lensZ - L.face) * 180 / Math.PI;
+    $("rTilt").textContent = `${tilt.toFixed(1)}°`;
+    $("sensorLabel").textContent = `${lens.name} · ${lens.w} × ${lens.hgt}`;
+    const held = personInFrame(lens), gate = $("gate");
+    gate.classList.toggle("held", held);
+    gate.textContent = held ? "Shopper in frame, reading delayed until they leave" : "Frame clear, reading allowed";
+    // ROI JSON
+    const json = {
+      _comment: `Generated by the Building 27 Pantry Model: ${lens.name}, lens ${P.camX} in from the left end, ${P.standoff} in standoff, lens ${L.lensY.toFixed(1)} in high, counter-to-cubby gap ${P.gap} in (estimated), aimed at the unit center. Replace with a real calibration frame.`,
+      camera: `${lens.name} ${lens.w}x${lens.hgt}, ${P.standoff} in perpendicular standoff`,
+      shelves: vis.map((r) => ({ name: `cubby_${r.row}_c${r.col}`, xywh: r.xywh }))
+    };
+    $("roiOut").textContent = JSON.stringify(json, null, 1).replace(/\[\n\s+(\d+),\n\s+(\d+),\n\s+(\d+),\n\s+(\d+)\n\s+\]/g, "[$1, $2, $3, $4]");
+    renderLedger(L, lens);
+    renderFindings(L, lens, rois, foot);
+    aimSensor(L);
+  }
+
+  // ---------- Research findings ----------
+  const pct = (v) => `${Math.round(v * 100)}%`;
+  function visibleDepth(L, row, h) {
+    // How far behind the cubby face the camera can see the tops of items of height h,
+    // looking through the slot between the item tops and the shelf above.
+    const yb = L.unitBot + RAIL + (row === "top" ? OP_H + RAIL : 0), s = L.lensZ - L.face;
+    const a = L.lensY - (yb + h), slot = OP_H - h;
+    if (a <= 0) return 0;                       // lens at or below the item tops: fronts only
+    if (a <= slot) return P.depth;
+    return Math.min(P.depth, slot * s / (a - slot));
+  }
+  function personBlocks(x, L, lens) {
+    const z = personZ(L);
+    for (const px of [x - 8, x + 8]) for (const y of [2, 34, 66]) for (const dz of [-6, 6]) {
+      const p = toPx(new THREE.Vector3(px, y, z + dz), lens);
+      if (p.inFront && p.x >= 0 && p.x <= lens.w && p.y >= 0 && p.y <= lens.hgt) return true;
+    }
+    return false;
+  }
+  function sweepUnknowns() {
+    const keep = { gap: P.gap, depth: P.depth }, out = { open: [], stackLow: [] };
+    for (let g = 8; g <= 21; g += 1) for (let d = 10; d <= 16; d += 1) {
+      P.gap = g; P.depth = d; const L = layout(), lens = aimSensor(L);
+      out.open.push(computeRois(L, lens).filter((r) => r.inside).length);
+      out.stackLow.push(visibleDepth(L, "low", 8.8) / d);
+    }
+    Object.assign(P, keep); aimSensor(layout());
+    const mm = (a) => [Math.min(...a), Math.max(...a)];
+    return { open: mm(out.open), stackLow: mm(out.stackLow) };
+  }
+  function card(cls, q, a, body) { return `<div class="finding ${cls}"><div class="q">${q}</div><div class="a">${a}</div>${body}</div>`; }
+  function renderFindings(L, lens, rois, foot) {
+    const vis = rois.filter((r) => r.inside), cols = [...new Set(vis.map((r) => r.col))];
+    const html = [];
+    // 1. Coverage and scope
+    const perCam = Math.max(1, Math.floor((foot - 2 * SIDE) / PITCH)), camsAll = Math.ceil(COLS / perCam);
+    html.push(card(vis.length === 18 ? "" : "warn", "How much of the wall does one camera cover?",
+      `${vis.length} of 18 openings`,
+      `<p>Full columns in frame: ${cols.length ? cols.sort((a, b) => a - b).join(", ") : "none"}. The frame is ${foot.toFixed(0)} in wide at the cubby face, against a ${RUN} in run.</p>
+       <p class="so">${vis.length === 18 ? "One camera covers the whole wall from here." : `Either scope the prototype to these ${cols.length} columns, or plan ${camsAll} cameras of this type to cover all 9 (about ${perCam} columns each).`}</p>`));
+    // 2. Depth observability
+    const rowsT = [["Low row", "low"], ["Top row", "top"]].map(([lab, r]) => {
+      const one = visibleDepth(L, r, 4.4), two = visibleDepth(L, r, 8.8);
+      return `<tr><td>${lab}</td><td>${one.toFixed(1)} in</td><td>${two.toFixed(1)} in</td></tr>`;
+    }).join("");
+    const lowStack = visibleDepth(L, "low", 8.8) / P.depth;
+    html.push(card(lowStack < 0.99 ? "warn" : "", "Can the camera see behind the front row?",
+      `Stacked low row: ${pct(lowStack)} of depth`,
+      `<table class="mini"><tr><th>How deep tops are visible</th><th>1 can tall</th><th>2 cans tall</th></tr>${rowsT}</table>
+       <p class="so">Cubbies are ${P.depth} in deep. Where a row is stacked close to the shelf above, the camera only sees the front few inches, so a one-deep facade and a full cubby look the same. Define the occupancy metric as visible front-face fill, and state the depth limit in the report.</p>`));
+    // 3. Pixel budget for the detector
+    const ppi = vis.length ? vis.reduce((a, r) => a + r.xywh[2], 0) / vis.length / OP_W : 0;
+    const can = 3.0 * ppi, whole = can * 960 / lens.w, cropW = vis.length ? vis.reduce((a, r) => a + r.xywh[2], 0) / vis.length : 1, crop = can * 960 / cropW;
+    html.push(card(whole < 32 ? "warn" : "", "Is there enough resolution for the detector?",
+      `Can face: ${can.toFixed(0)} px`,
+      `<table class="mini"><tr><th>Input to the model</th><th>can width</th></tr>
+        <tr><td>Full ${lens.w} px frame</td><td>${can.toFixed(0)} px</td></tr>
+        <tr><td>Whole frame resized to 960</td><td>${whole.toFixed(0)} px</td></tr>
+        <tr><td>Each cubby crop resized to 960</td><td>${crop.toFixed(0)} px</td></tr></table>
+       <p class="so">COCO counts objects under 32 px as small, where detectors do worst. ${whole < 32 ? "Resizing the whole frame drops cans into that range, so crop each cubby first. That is the ROI-crop path EXP-001 already pointed to." : "Even the whole-frame resize keeps cans above that range."}</p>`));
+    // 4. Person gate exposure
+    let blocked = [], step = 2;
+    for (let x = -X0; x <= ROOM_L - X0; x += step) if (personBlocks(X0 + x, L, lens)) blocked.push(x);
+    const span = blocked.length ? [blocked[0], blocked[blocked.length - 1]] : null;
+    html.push(card("info", "Where does a shopper delay a reading?",
+      span ? `${span[0]}–${span[1]} in along the cubbies` : "Nowhere",
+      `<p>${span ? `A shopper standing anywhere in that ${span[1] - span[0]} in stretch (measured from the cubbies' left end; ${pct((span[1] - span[0]) / RUN)} of the 216 in run) is in frame, so the gate holds the 30-minute reading until they move.` : "No aisle position puts a shopper in frame."}</p>
+       <p class="so">This is the zone to log when measuring how often readings slip during open hours (M–F 8:30 to 6). Readings outside open hours never hit it.</p>`));
+    // 5. Do the unknown measurements matter?
+    const sw = sweepUnknowns();
+    const stable = sw.open[0] === sw.open[1];
+    html.push(card(stable ? "info" : "warn", "Do the unmeasured dimensions change any of this?",
+      stable ? "Coverage holds across the full range" : `Coverage moves: ${sw.open[0]} to ${sw.open[1]} openings`,
+      `<p>Swept counter-to-cubby gap 8 to 21 in and cubby depth 10 to 16 in. Openings tracked: ${sw.open[0]}${stable ? "" : ` to ${sw.open[1]}`}. Stacked low-row depth visible: ${pct(sw.stackLow[0])} to ${pct(sw.stackLow[1])}.</p>
+       <p class="so">${stable ? "The camera and scope decision is safe to make now. The gap and depth only change how far into the cubbies the camera sees. Measure them for the report, not for the decision." : "Measure the counter-to-cubby gap before finalizing the scope."}</p>`));
+    // 6. What on the counter hides the low row
+    const ybLow = L.unitBot + RAIL, edge = COUNTER_D;
+    const sight = ybLow + (L.lensY - ybLow) * (edge - L.face) / (L.lensZ - L.face) - COUNTER_H;
+    html.push(card(sight < 12 ? "warn" : "info", "What on the counter would block the low row?",
+      `Anything over ${sight.toFixed(1)} in tall`,
+      `<p>The camera's line to the bottom of the low cubbies passes ${sight.toFixed(1)} in above the counter at its front edge, and lower toward the wall. A bread crate, a sign, or stacked paper bags taller than that at the edge hides the bottom of the low row.</p>
+       <p class="so">${sight > 12 ? "A bread crate (about 12 in) clears it, but stacked bags or a tall sign at the edge would not." : "A bread crate (about 12 in) at the edge would block part of the low row."} Keep tall items off the counter in front of the tracked columns, or give them their own ROI.</p>`));
+    // 7. Ground truth: visible fill vs true volume
+    const gt = stockStats.filter((st) => vis.some((r) => r.col === st.col && r.row === st.row));
+    const mf = gt.length ? gt.reduce((a, g) => a + g.front, 0) / gt.length : 0, mv = gt.length ? gt.reduce((a, g) => a + g.volume, 0) / gt.length : 0;
+    const fooled = gt.filter((g) => g.front >= 0.9 && g.volume < 0.6).length;
+    html.push(card(fooled ? "warn" : "info", "How far apart are visible fill and real stock?",
+      `Front ${pct(mf)} vs volume ${pct(mv)}`,
+      `<table class="mini"><tr><th>Cubby</th><th>front</th><th>volume</th></tr>${gt.map((g) => `<tr><td>c${g.col} ${g.row}, ${g.kind}</td><td>${pct(g.front)}</td><td>${pct(g.volume)}</td></tr>`).join("")}</table>
+       <p class="so">This stock day: ${fooled} tracked cubb${fooled === 1 ? "y looks" : "ies look"} full from the front but hold under 60% of capacity. Press "New stock day" to resample. A shelf-outflow claim in the report has to be stated as front-face fill.</p>`));
+    $("findings").innerHTML = html.join("");
+  }
+
+  // ---------- Ledger ----------
+  function renderLedger(L, lens) {
+    const rows = [
+      ["Cubby columns", "9 (18 openings)", "der", "216 in counter ÷ 24 in column pitch"],
+      ["Column pitch", "24 in", "meas", "Tape, 2026-10-21"],
+      ["Cubby unit height", "22 in", "meas", "Tape, 2026-10-21 (video said 29 to 31)"],
+      ["Opening, inside", "22.8 × 9.85 in", "meas", "Tape, 2026-10-21 (video said 22 to 24 × 13 to 14)"],
+      ["Shelf rail thickness", `${RAIL.toFixed(2)} in`, "der", "(22 − 2 × 9.85) ÷ 3"],
+      ["Counter length", "216 in", "meas", "Tape, 2026-10-21"],
+      ["Counter height", "36 in", "std", "Standard counter; video confidence high"],
+      ["Counter depth", "25 in", "est", "Video estimate, standard base cabinet"],
+      ["Counter to cubby underside", `${P.gap} in`, "est", "Video 16 to 21 in × 0.73 vertical correction. Measure next visit"],
+      ["Cubby depth", `${P.depth} in`, "est", "Video 12 to 14 in. Measure next visit"],
+      ["Camera standoff to cubby face", `${P.standoff} in`, P.standoff === 76 ? "meas" : "est", "Tape, 2026-10-21"],
+      ["Camera from left end", `${P.camX} in`, P.camX === 73 ? "meas" : "est", "Tape, 2026-10-21"],
+      ["Black cabinet height", "72 in", "meas", "Tape, 2026-10-21"],
+      ["Black cabinet footprint", "36 × 18 in, sideways (18 in along the run)", "std", "Standard metal storage cabinet; orientation from Amogh, 2026-10-21"],
+      ["Lens height", `${L.lensY.toFixed(1)} in`, "der", "72 in cabinet + lens lift"],
+      ["Room width, brick to drywall", `${L.W.toFixed(1)} in (${(L.W / 12).toFixed(1)} ft)`, "est", "Cubby depth + standoff + the sideways cabinet's 36 in, assuming it reaches the door wall. The video said 8 to 9 ft, so this conflicts: measure the room width"],
+      ["Aisle, counter edge to cabinet", `${(L.cabFront - COUNTER_D).toFixed(0)} in`, "der", "Video said 5.5 to 6.5 ft"],
+      ["Room plan", "Door at right end of south wall; cubbies across on north brick wall", "photo", "Amogh, 2026-10-21; matches the 2023 doorway video frame"],
+      ["West wall", "Brick, glass reach-ins (1-door + 2-door)", "photo", "Amogh, 2026-10-21; units and order from the video"],
+      ["East wall", "Drywall with whiteboards", "photo", "Amogh, 2026-10-21"],
+      ["Cubby run starts", `${X0} in from west wall`, "est", "Counter butts the glass fridge's side in the video; fridge depth assumed 31 in"],
+      ["Room length", `${ROOM_L} in`, "est", "Fridge depth + 216 in run + room for the door; not measured"],
+      ["Brick bump-out, SW corner", `${(CAB_X - CAB_D / 2).toFixed(0)} in wide × ${PIER_D} in deep`, "est", "Amogh: cabinet stands sideways against it. Width set so the camera stays at the measured 73 in; depth set flush with the cabinet end. Measure both"],
+      ["Produce stacks", "Boxes on 21 in milk crates, about 31 in tall", "photo", "Photos 1 and 4; sizes assumed"],
+      ["Ceiling", `${CEIL} in`, "est", "Video 8.5 to 9 ft"],
+      ["Fridge–cabinet gap", `${GAP_FRIDGE} in`, "photo", "A 13 in milk crate stack fits in it"],
+      ["Outlet", "Duplex at baseboard in the gap, one receptacle free", "photo", "Photo 3; free receptacle confirmed by Amogh"],
+      ["SABA 2-door fridge", `${FRIDGE_W} × ${FRIDGE_D} × ${FRIDGE_H} in`, "est", "Video reference size; depth assumed from typical 2-door reach-ins"],
+      ["Wire rack", `${RACK_W} × ${RACK_D} × ${RACK_H} in`, "std", "Common chrome rack size, from photo 1"],
+      ["Webcam field of view", `${lens.h}° H × ${lens.v}° V`, lens.name === "C920" ? "std" : "est", lens.name === "C920" ? "Logitech C920 spec; model still to confirm" : "What-if lens"]
+    ];
+    const label = { meas: "Measured", der: "Derived", photo: "Photos", est: "Estimated", std: "Assumed" };
+    $("ledger").innerHTML = rows.map(([a, b, s, n]) => `<tr><td>${a}</td><td class="num">${b}</td><td><span class="chip c-${s}">${label[s]}</span></td><td>${n}</td></tr>`).join("");
+  }
+
+  // ---------- Controls ----------
+  const fmt = { camX: (v) => `${v} in`, standoff: (v) => `${v} in`, gap: (v) => `${v} in`, depth: (v) => `${v} in`, lift: (v) => `${v} in`, fill: (v) => `${Math.round(v * 100)}%`, personX: (v) => `${v} in` };
+  function syncOutputs() {
+    Object.keys(fmt).forEach((k) => { $(k).value = P[k]; $(k + "Out").textContent = fmt[k](P[k]); });
+    $("lens").value = P.lens; $("lensOut").textContent = LENSES[P.lens].name;
+    $("personBtn").setAttribute("aria-pressed", String(P.person));
+  }
+  let pending = null;
+  function schedule(rebuildStock) { if (pending) cancelAnimationFrame(pending); pending = requestAnimationFrame(() => { pending = null; update(rebuildStock); }); }
+  Object.keys(fmt).forEach((k) => $(k).addEventListener("input", (e) => {
+    P[k] = parseFloat(e.target.value); $(k + "Out").textContent = fmt[k](P[k]);
+    schedule(k === "fill" || k === "gap" || k === "depth");
+  }));
+  $("lens").addEventListener("change", (e) => { P.lens = e.target.value; $("lensOut").textContent = LENSES[P.lens].name; schedule(false); });
+  $("restock").addEventListener("click", () => { seed = (seed * 1103515245 + 12345) >>> 0; schedule(true); });
+  $("personBtn").addEventListener("click", () => { P.person = !P.person; syncOutputs(); schedule(false); });
+  $("resetBtn").addEventListener("click", () => { Object.assign(P, DEFAULTS); syncOutputs(); schedule(true); setView("vOverview"); });
+  ["vOverview", "vPlan", "vBehind"].forEach((id) => $(id).addEventListener("click", () => setView(id)));
+  $("copyRoi").addEventListener("click", () => {
+    const txt = $("roiOut").textContent, btn = $("copyRoi");
+    const done = (ok) => { btn.textContent = ok ? "Copied" : "Select the text below to copy"; setTimeout(() => (btn.textContent = "Copy ROI JSON"), 1800); };
+    try { navigator.clipboard.writeText(txt).then(() => done(true), () => { selectRoi(); done(false); }); } catch (e) { selectRoi(); done(false); }
+  });
+  function selectRoi() { const r = document.createRange(); r.selectNodeContents($("roiOut")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+  new ResizeObserver(() => { renderMain(); renderSensor(); }).observe(document.body);
+  try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => update(false)); } catch (e) {}
+  new MutationObserver(() => update(false)).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  syncOutputs();
+  update(true);
+  setView("vOverview");
+})();
+</script>
+
+</body></html>
