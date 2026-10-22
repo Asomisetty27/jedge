@@ -506,6 +506,83 @@
 </div>
 
 <div class="entry">
+  <div class="entry-date">2026-09-04 to 2026-09-12</div>
+  <h3>Reaching the pantry, and agreeing the terms <span class="pill done">done</span></h3>
+  <p>The partner channel was slower than planned. The PI's first outreach to the pantry went about
+  two weeks without a reply, and a walk-in visit was cancelled before it happened. The reply came
+  in the second week of the semester. A scheduling conflict with a class meant the PI met the
+  director who oversees the pantry alone and toured the space.</p>
+  <p>The director's first concern was privacy, and the terms that came out of the conversation are
+  stricter than the original design. Frames are captured every 30 minutes. If a person is in frame,
+  the system waits until they leave rather than skipping the reading. No frame containing a person
+  is ever retained, and blurring faces was ruled out as a substitute. Training images come from a
+  bounded two to three week acquisition window, with sample images reviewed by the pantry before
+  the IRB submission, and the team has access during closed hours.</p>
+  <p>Two working assumptions were corrected as a result. Face blurring was removed from the IRB
+  mitigation plan, since the partner had explicitly ruled it out. The assumption that each cubby
+  holds one product was dropped: under heavy traffic, shelf assignments shift through the day. The
+  terms also exposed a design tension. A strict wait-for-an-empty-frame rule in a client-choice
+  pantry, where people browse all day, may push most readings into low-traffic and closed hours.
+  That tension is still open and shapes the capture schedule.</p>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-09-16</div>
+  <h3>Building the person gate <span class="pill done">done</span></h3>
+  <p>The new terms made a person detector a hard requirement, and the gap model was never trained
+  to see people. The gate runs a stock COCO-pretrained detector alongside the gap model and allows
+  a reading only on a frame with nobody in it, waiting up to 20 seconds for a clear shot before
+  trying again at the next cycle. It was tested on real pantry footage and on four scripted
+  scenarios: a person leaving the frame, a timeout, the video source ending mid-wait, and a frame
+  that is already clear.</p>
+  <p>The tests found a real bug. An early throttle design could consume more frames than a short
+  test source contained, then report the source as exhausted before ever reaching a clear frame.
+  On a live camera that would have looked like a monitor that silently stops taking readings. What
+  the tests did not establish is the gate's miss rate under occlusion, side angles, and low light.
+  That number matters beyond engineering, because the gate's reliability determines which tier of
+  IRB review the project needs.</p>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-09-21</div>
+  <h3>Hardware in hand, and a first site visit <span class="pill done">done</span></h3>
+  <p>The Jetson Orin Nano developer kit and a 500 GB NVMe drive were picked up, and bring-up
+  started. Power was confirmed. First boot is waiting on a DisplayPort cable, a keyboard and
+  mouse, and an SD card reader. The kit has no HDMI port, and the SD-card flash path from macOS
+  avoids needing an Ubuntu host.</p>
+  <p>The same day, the director who oversees the pantry authorized the install on two conditions:
+  nothing permanently damaging, and a camera that is not too big. The first rules out anchoring
+  into the brick. The second favors a compact USB webcam over the larger CSI sensor with an add-on
+  lens. The director also asked for on-site signage explaining the camera, which is drafted but
+  deliberately not posted until the person gate's miss rate is measured, because the sign makes a
+  technical claim.</p>
+</div>
+
+<div class="entry setback">
+  <div class="entry-date">2026-10-01</div>
+  <h3>Characterizing the person gate, while three blockers stood still <span class="pill setback">setback</span></h3>
+  <p>The first visit was an authorization meeting, not a technical survey: no measurements and no
+  calibration frame. For ten days afterward, three blockers did not move: the camera order, a
+  second technical visit, and the Jetson peripherals. No single cause was to blame. The visit was
+  waiting on a promised day-to-day contact, and nobody followed up. The fix was procedural: a
+  direct follow-up to the director and a dated plan for each blocker.</p>
+  <p>The person gate did move. Run against all 250 frames of existing pantry footage, the nano
+  detector scored zero on a partially occluded person at every confidence threshold. The next size
+  up, YOLO11s, caught that person and seven more cases with no regressions anywhere in the set, so
+  it became the default. The caveat stands: this is promotional video, well lit and mostly
+  frontal. The real miss rate has to be measured on footage from the mounted camera.</p>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-10-15</div>
+  <h3>A day-to-day contact, and the camera arrives <span class="pill done">done</span></h3>
+  <p>The follow-up worked. The director named the pantry coordinator as the project's day-to-day
+  contact, and the coordinator replied with visit windows right away. The technical visit was set
+  for the following week. The webcam the PI ordered was delivered the same week as the visit,
+  which closed the last of the three stalled blockers apart from the Jetson peripherals.</p>
+</div>
+
+<div class="entry">
   <div class="entry-date">2026-10-21</div>
   <h3>Technical visit, and the room rebuilt at full scale <span class="pill done">done</span></h3>
   <p>The second pantry visit was a tape-measure visit. The cubby wall is nine columns on a 24 in
