@@ -631,7 +631,8 @@
   the pretrained base model's score, and it reproduces on the device at 0.915 (validation) and 0.927
   (test). The deployed model, after its 15-frame pantry fine-tune, scores 0.24 and 0.29 on the same
   retail data. The fine-tune traded retail box accuracy for better gap area, since v3 still has the
-  lowest occupancy error on the pixel-mask benchmark, 11.8 points versus the base's 14.2. The
+  lowest raw occupancy error on the pixel-mask benchmark, 11.8 points versus the base's 14.2
+  (but see the next entry for what that comparison is worth). The
   report will quote both numbers, and the pantry evaluation will score both models, so the
   deployed model is picked on pantry data rather than on retail data.</p>
   <p>The complete monitoring loop then ran on the device against the 194 frames of pantry footage:
@@ -645,6 +646,46 @@
   mode, where frames are never kept. Measuring accuracy on real pantry shelves needs a bounded
   collection of shelf-only frames that are kept for labeling. That collection now goes to the IRB
   inquiry before any frame is retained.</p>
+</div>
+
+<div class="entry setback">
+  <div class="entry-date">2026-10-22</div>
+  <h3>What the occupancy number is actually worth <span class="pill setback">setback</span></h3>
+  <p>The mislabeled 0.920 raised a question: why would a fine-tune on 15 pantry frames wreck retail
+  accuracy but improve the occupancy score? The pixel-mask benchmark was downloaded again and both
+  models were rerun on three sources: the 180 mask images, the 156 retail test images, and the
+  pantry validation frames.</p>
+  <p>The fine-tune taught v3 to draw a few large boxes. On retail shelves it predicts 1.0 gap box
+  per image where the labels have 6.2, and its median box is about four times too large. The base
+  model predicts 7.2 boxes at the right size. On retail data the base model's occupancy error is
+  five times lower.</p>
+  <table>
+    <tr><th>Mask benchmark, 180 images</th><th>base</th><th>v3</th><th>always guess the median</th></tr>
+    <tr><td>raw occupancy error (conf 0.15)</td><td class="num">0.135</td><td class="num">0.109</td><td class="num"><b>0.091</b></td></tr>
+    <tr><td>after linear calibration (2-fold)</td><td class="num">0.081</td><td class="num">0.079</td><td class="num">0.091</td></tr>
+    <tr><td>correlation with the true value</td><td class="num">0.55</td><td class="num">0.58</td><td class="num">n/a</td></tr>
+  </table>
+  <p>Uncalibrated, neither model beats a predictor that ignores the image and always answers with
+  the median gap fraction. Both models undercount empty space by 10 to 13 points, because the
+  benchmark's masks mark more of a shelf as empty than the box-labeled training data does. v3's
+  earlier advantage came mostly from its oversized boxes cancelling part of that undercount. Once
+  each model gets a simple linear calibration, fitted on half the images and scored on the other
+  half, the two tie at about 8 points, roughly 15 percent better than the constant guess. That is
+  real signal, but modest, and it is on retail shelves, not the pantry.</p>
+  <p>The pantry validation set could not settle the tie. It has three frames and one labeled gap,
+  and neither model predicts anything on it. No measured pantry number exists for either model.</p>
+  <p>Three changes follow. Calibration at install is now required: an empty and a full reference
+  for each cubby, refitted on the first labeled real frames. Every accuracy table in the report
+  gets a constant-guess row and a calibrated row, so 11.8 is never quoted alone. The deployed
+  model is undecided again and will be chosen on pantry data, so both models now have TensorRT
+  engines on the Jetson (the base engine scores 0.927 on the retail test split, matching its
+  original weights).</p>
+  <p>The tooling for the real-pantry measurement is also written. A collection script saves a
+  shelf image only after two independent person checks, refuses to run without an IRB reference
+  and an end date, and logs every attempt. A review page served from the Jetson over a direct
+  cable lets each frame be labeled, or deleted at once if any part of a person shows, without the
+  image ever being copied off the device. It will not run until the IRB inquiry, revised the same
+  day to describe the collection phase, comes back.</p>
 </div>
 
 </div><!-- /timeline -->
