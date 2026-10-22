@@ -65,6 +65,7 @@
   table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .88rem; }
   th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); }
   th { font-family: "Futura","Avenir Next",sans-serif; font-size: .68rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 600; }
+  .note { font-size: .88rem; color: var(--muted); border-left: 3px solid var(--line); padding-left: 10px; }
   .num { font-family: ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
   a { color: var(--cam); }
   ul.tight { margin: 8px 0; padding-left: 20px; }
@@ -345,11 +346,15 @@
   important real-world check, the candidate model <b>missed the bare case shelves</b> that the current
   model detects. The current model (v3) stays.</p>
   <table>
-    <tr><th>Test</th><th>v3 (5.5k curated images)</th><th>candidate (11.6k cleaned images)</th></tr>
+    <tr><th>Test</th><th>current pool (5.5k curated images)</th><th>candidate (11.6k cleaned images)</th></tr>
     <tr><td>validation mAP50</td><td class="num"><b>0.920</b></td><td class="num">0.902</td></tr>
     <tr><td>occupancy error</td><td class="num"><b>11.8 points</b></td><td class="num">12.3 points</td></tr>
     <tr><td>bare-shelf detection (pantry)</td><td><b>found, 0.43</b></td><td>missed</td></tr>
   </table>
+  <p class="note">Correction, 2026-10-22: the validation mAP50 row scores each pool's base model before
+  the pantry fine-tune. This table originally labeled that column "v3", but 0.920 is the base model's
+  score. The deployed v3 scores 0.29 on the same retail data (see the 2026-10-22 entry). The occupancy
+  and bare-shelf rows are after the fine-tune.</p>
   <p><b>The finding:</b> doubling the training data produced a strictly worse model, even with the label
   poisoning removed. The added sources' differing annotation styles and heavy augmentation diluted the
   target distribution rather than reinforcing it. This closes the public-data avenue with a measured
@@ -607,6 +612,39 @@
   the full frame but 27 px if the whole frame is resized to the model's 960 px input, so each cubby
   is cropped before inference. A shopper anywhere in a 68 in stretch of the aisle is in frame and
   delays that reading.</p>
+</div>
+
+<div class="entry">
+  <div class="entry-date">2026-10-22</div>
+  <h3>The Jetson comes up, and the model is checked on the device <span class="pill done">done</span></h3>
+  <p>The Orin Nano now runs JetPack 6.2.1 from its 500 GB NVMe drive. It boots without the microSD
+  card, which was used once to bring the system up and is now kept as a rescue disk. Its firmware was
+  already on the JetPack 6 line, so no older release had to be flashed first. The software
+  environment installed with two dependency failures, both fixed and written back into the setup
+  script. A generic ONNX Runtime package was silently replacing the GPU build, and an automatic
+  dependency update pulled in a NumPy version that crashed the model export.</p>
+  <p>The deployed model was compiled into a TensorRT engine on the device, at half precision (FP16)
+  and the 960 px input size. On the 156-image retail test split, the engine and the original weights
+  scored the same: mAP50 0.3054 for both, mAP50-95 0.1735 versus 0.1737. Inference takes 20.9 ms per
+  frame, 31 percent faster than full precision. Converting for the edge cost no measurable accuracy.</p>
+  <p>The same runs turned up a mislabeled number in this log. The 0.920 mAP50 quoted since August is
+  the pretrained base model's score, and it reproduces on the device at 0.915 (validation) and 0.927
+  (test). The deployed model, after its 15-frame pantry fine-tune, scores 0.24 and 0.29 on the same
+  retail data. The fine-tune traded retail box accuracy for better gap area, since v3 still has the
+  lowest occupancy error on the pixel-mask benchmark, 11.8 points versus the base's 14.2. The
+  report will quote both numbers, and the pantry evaluation will score both models, so the
+  deployed model is picked on pantry data rather than on retail data.</p>
+  <p>The complete monitoring loop then ran on the device against the 194 frames of pantry footage:
+  person gate, detector, cubby regions, shelf state, and the staff digest. It finished cleanly, and
+  a filesystem check afterward found that no image file had been written anywhere. Only numbers
+  were. The module drew 4.6 W at the median and 7.4 W at peak. Two privacy settings were changed
+  before any camera is attached. The vision library's usage analytics are off, and the USB audio
+  driver is blocked, because the webcam has a built-in microphone and the project has committed to
+  never enabling one.</p>
+  <p>One gap surfaced in the plan. Everything written for review so far describes the monitoring
+  mode, where frames are never kept. Measuring accuracy on real pantry shelves needs a bounded
+  collection of shelf-only frames that are kept for labeling. That collection now goes to the IRB
+  inquiry before any frame is retained.</p>
 </div>
 
 </div><!-- /timeline -->
