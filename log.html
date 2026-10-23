@@ -688,6 +688,72 @@
   day to describe the collection phase, comes back.</p>
 </div>
 
+<div class="entry">
+  <div class="entry-date">2026-10-22</div>
+  <h3>EXP-009: testing the pipeline on frames rendered from the pantry model <span class="pill done">done</span></h3>
+  <p>No real pantry image can be kept until the IRB answers, so the deployed pipeline was tested on
+  synthetic frames instead. The <a href="model.html">pantry model</a> was extended to render labeled
+  webcam frames from the exact install position: the camera on top of the cabinet, 76 inches from the
+  cubbies. Each of 400 frames varies what the tape measure did not pin down (cubby depth, the gap to
+  the counter, lens height, a degree or two of mount error), plus what changes day to day: how full
+  the shelves are, lighting level and warmth, and which products sit where. Products carry textures
+  cut from the 2023 pantry video, and webcam blur, noise, and compression are added. Every frame comes
+  with the true fill of each cubby, which gave 3,189 cubby readings.</p>
+  <p>The setup that was deployed has no signal at this geometry. Running the detector on the whole
+  frame, its readings correlate with the truth at about zero, and no calibration does better than a
+  constant guess. It reads nearly every cubby as full. Both models mark the brick wall as empty
+  space and miss the empty cubbies, because their idea of a gap is retail's dark shelf back, while
+  these cubbies are light wood inside.</p>
+  <p>The cause is pixel budget. A cubby is about 410 by 176 pixels in the camera frame, and shrinking
+  the whole frame to 960 pixels wide leaves it too small for the detector. Cropping each cubby and
+  running the detector on it alone recovers most of the signal:</p>
+  <table>
+    <tr><th>Model, input, confidence</th><th>error after calibration</th><th>constant guess</th><th>correlation</th></tr>
+    <tr><td>v3, whole frame, 0.15 (as deployed)</td><td class="num">0.283</td><td class="num">0.282</td><td class="num">&minus;0.05</td></tr>
+    <tr><td>base, whole frame, 0.05</td><td class="num">0.283</td><td class="num">0.282</td><td class="num">0.04</td></tr>
+    <tr><td>v3, per-cubby crops, 0.05</td><td class="num">0.238</td><td class="num">0.282</td><td class="num">0.46</td></tr>
+    <tr><td><b>base, per-cubby crops, 0.05</b></td><td class="num"><b>0.164</b></td><td class="num">0.282</td><td class="num"><b>0.76</b></td></tr>
+  </table>
+  <p>Errors are in occupancy fraction, with the calibration fitted on half the frames and scored on
+  the other half. The base model beats v3 again, so every quantitative test now favors it. A lower
+  confidence threshold helps everywhere, which means the models under-detect these gaps. Even the
+  best setup reads about 28 points too full before calibration, so calibration at install stays
+  required. One more number bounds what any front-facing camera can do: even a perfect reading of
+  the visible fronts misses the true depth-inclusive stock by about 10 points.</p>
+  <p>The monitor now crops each cubby by default. This is a simulation: the products are textured
+  blocks in a handful of designs, the lighting is clean, and there is no clutter. It shows where the
+  pipeline breaks. It is not the real accuracy number, which still needs labeled frames from the
+  pantry itself.</p>
+</div>
+
+<div class="entry setback">
+  <div class="entry-date">2026-10-22</div>
+  <h3>EXP-009b: training on the rendered frames does not transfer <span class="pill setback">setback</span></h3>
+  <p>The next question was whether the rendered frames could also teach the model. The base model was
+  fine-tuned on 4,000 cubby crops from 800 new rendered frames, with surface colors randomized so it
+  could not key on one exact look, plus 800 retail images mixed in so it would keep its retail skill.
+  It was then scored three ways: on held-out rendered frames, on the retail test set, and on the 15
+  real pantry video frames (whole frame, since that footage was shot from other angles and has no cubby map).</p>
+  <table>
+    <tr><th>Test</th><th>base</th><th>fine-tuned</th></tr>
+    <tr><td>held-out rendered frames, error after calibration</td><td class="num">0.164</td><td class="num">0.004</td></tr>
+    <tr><td>retail test set, mAP50</td><td class="num"><b>0.886</b></td><td class="num">0.755</td></tr>
+    <tr><td>real pantry frames, labeled gaps found</td><td class="num">1 of 7</td><td class="num">1 of 7</td></tr>
+    <tr><td>real pantry frames, boxes drawn where no gap is labeled</td><td class="num"><b>9</b></td><td class="num">49</td></tr>
+  </table>
+  <p>The near-perfect score on rendered frames is memorization, not accuracy. With eight product
+  textures, clean light, and nothing else on the shelves, the renderer's gaps are trivially easy to
+  find. What the model actually learned was "a darker, plain patch between objects," and on real
+  footage that fires on people's hair, fruit baskets, and shelf edges. It gained nothing on the real
+  frames, drew five times as many boxes where no gap is labeled, and lost 13 points of retail
+  accuracy. (The retail figures here are both from the same run at 640 pixels, so they compare with
+  each other but not with the 0.927 measured earlier on the Jetson.)</p>
+  <p>The fine-tuned model is rejected. The deployed model is now the base model, run on per-cubby crops
+  at confidence 0.05. The rendered frames stay useful for testing the pipeline and the camera
+  geometry, which is what found the whole-frame failure, but not as training data. A model better
+  than the base model now has to come from real labeled pantry frames.</p>
+</div>
+
 </div><!-- /timeline -->
 
 <div class="nav">
